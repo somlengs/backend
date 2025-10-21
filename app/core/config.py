@@ -27,4 +27,4 @@ class Config:
 
     class Telegram:
         TOKEN = optional_env('TELEGRAM_TOKEN', '')
-        CHAT_ID = optional_env('TELEGRAM_CHAT_ID', 0)
+        CHAT_ID = optional_env('TELEGRAM_CHAT_ID', '')

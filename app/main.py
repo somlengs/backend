@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import sys
 
@@ -6,7 +7,7 @@ from fastapi import FastAPI
 
 from app.core.config import Config
 from app.core.handlers.log_handlers.telegram import TelegramLogHandler
-from app.core.logger import Logger
+from app.core import logger
 
 
 app = FastAPI()
@@ -14,18 +15,31 @@ app = FastAPI()
 
 @app.get('/')
 async def root():
-    Logger.get().debug('hi')
     return {'message': 'hi'}
 
 
+def setup_server() -> uvicorn.Server:
+    config = uvicorn.Config(
+        app,
+        port=Config.PORT,
+        log_level=Config.LOG_LEVEL
+    )
+    server = uvicorn.Server(config)
+    server.config.configure_logging()
+    loop_factory = config.get_loop_factory()
+
+    if loop_factory:
+        asyncio.set_event_loop(loop_factory())
+
+    return server
+
+
 def main():
-    Logger.add_handler(TelegramLogHandler(level=logging.WARNING))
+    server = setup_server()
+
+    logger.add_handler(TelegramLogHandler(level=logging.WARNING))
 
     try:
-        uvicorn.run(
-            app,
-            port=Config.PORT,
-            log_level=Config.LOG_LEVEL,
-        )
+        server.run()
     except KeyboardInterrupt:
         sys.exit(0)

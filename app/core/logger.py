@@ -1,20 +1,14 @@
 import logging
 from logging import Handler
-from logging import Logger as L
+from logging import Logger
 from collections.abc import Sequence
 
 from app.core.config import Config
 from app.entities.types import LogLevelT
 
-class Logger:
 
-    @classmethod
-    def get(cls) -> L:
-        return logging.getLogger('uvicorn.error')
-        
-    @classmethod
-    def add_handler(
-        cls,
-        handler: Handler
-        ) -> None:
-        cls.get().addHandler(handler)
+def get() -> Logger:
+    return logging.getLogger('uvicorn.error')
+
+def add_handler(handler: Handler) -> None:
+    get().addHandler(handler)
