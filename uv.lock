@@ -56,8 +56,14 @@ source = { editable = "." }
 dependencies = [
     { name = "asyncpg" },
     { name = "fastapi" },
+    { name = "ffmpeg-python" },
+    { name = "httpx" },
     { name = "passlib", extra = ["bcrypt"] },
+    { name = "psycopg2" },
+    { name = "pydub" },
+    { name = "pyjwt" },
     { name = "python-dotenv" },
+    { name = "python-multipart" },
     { name = "python-telegram-bot" },
     { name = "sqlalchemy" },
     { name = "supabase" },
@@ -68,8 +74,14 @@ dependencies = [
 requires-dist = [
     { name = "asyncpg", specifier = ">=0.30.0" },
     { name = "fastapi", specifier = ">=0.119.0" },
+    { name = "ffmpeg-python", specifier = ">=0.2.0" },
+    { name = "httpx", specifier = ">=0.28.1" },
     { name = "passlib", extras = ["bcrypt"], specifier = ">=1.7.4" },
+    { name = "psycopg2", specifier = ">=2.9.11" },
+    { name = "pydub", specifier = ">=0.25.1" },
+    { name = "pyjwt", specifier = ">=2.10.1" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
+    { name = "python-multipart", specifier = ">=0.0.20" },
     { name = "python-telegram-bot", specifier = ">=22.5" },
     { name = "sqlalchemy", specifier = ">=2.0.44" },
     { name = "supabase", specifier = ">=2.22.0" },
@@ -309,6 +321,27 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/0a/f9/5c5bcce82a7997cc0eb8c47b7800f862f6b56adc40486ed246e5010d443b/fastapi-0.119.0.tar.gz", hash = "sha256:451082403a2c1f0b99c6bd57c09110ed5463856804c8078d38e5a1f1035dbbb7", size = 336756, upload-time = "2025-10-11T17:13:40.53Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ce/70/584c4d7cad80f5e833715c0a29962d7c93b4d18eed522a02981a6d1b6ee5/fastapi-0.119.0-py3-none-any.whl", hash = "sha256:90a2e49ed19515320abb864df570dd766be0662c5d577688f1600170f7f73cf2", size = 107095, upload-time = "2025-10-11T17:13:39.048Z" },
+]
+
+[[package]]
+name = "ffmpeg-python"
+version = "0.2.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "future" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/dd/5e/d5f9105d59c1325759d838af4e973695081fbbc97182baf73afc78dec266/ffmpeg-python-0.2.0.tar.gz", hash = "sha256:65225db34627c578ef0e11c8b1eb528bb35e024752f6f10b78c011f6f64c4127", size = 21543, upload-time = "2019-07-06T00:19:08.989Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d7/0c/56be52741f75bad4dc6555991fabd2e07b432d333da82c11ad701123888a/ffmpeg_python-0.2.0-py3-none-any.whl", hash = "sha256:ac441a0404e053f8b6a1113a77c0f452f1cfc62f6344a769475ffdc0f56c23c5", size = 25024, upload-time = "2019-07-06T00:19:07.215Z" },
+]
+
+[[package]]
+name = "future"
+version = "1.0.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/a7/b2/4140c69c6a66432916b26158687e821ba631a4c9273c474343badf84d3ba/future-1.0.0.tar.gz", hash = "sha256:bd2968309307861edae1458a4f8a4f3598c03be43b97521076aebf5d94c07b05", size = 1228490, upload-time = "2024-02-21T11:52:38.461Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/da/71/ae30dadffc90b9006d77af76b393cb9dfbfc9629f339fc1574a1c52e6806/future-1.0.0-py3-none-any.whl", hash = "sha256:929292d34f5872e70396626ef385ec22355a1fae8ad29e1a734c3e43f9fbc216", size = 491326, upload-time = "2024-02-21T11:52:35.956Z" },
 ]
 
 [[package]]
@@ -677,6 +710,17 @@ wheels = [
 ]
 
 [[package]]
+name = "psycopg2"
+version = "2.9.11"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/89/8d/9d12bc8677c24dad342ec777529bce705b3e785fa05d85122b5502b9ab55/psycopg2-2.9.11.tar.gz", hash = "sha256:964d31caf728e217c697ff77ea69c2ba0865fa41ec20bb00f0977e62fdcc52e3", size = 379598, upload-time = "2025-10-10T11:14:46.075Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/b5/bf/635fbe5dd10ed200afbbfbe98f8602829252ca1cce81cc48fb25ed8dadc0/psycopg2-2.9.11-cp312-cp312-win_amd64.whl", hash = "sha256:e03e4a6dbe87ff81540b434f2e5dc2bddad10296db5eea7bdc995bf5f4162938", size = 2713969, upload-time = "2025-10-10T11:10:15.946Z" },
+    { url = "https://files.pythonhosted.org/packages/88/5a/18c8cb13fc6908dc41a483d2c14d927a7a3f29883748747e8cb625da6587/psycopg2-2.9.11-cp313-cp313-win_amd64.whl", hash = "sha256:8dc379166b5b7d5ea66dcebf433011dfc51a7bb8a5fc12367fa05668e5fc53c8", size = 2714048, upload-time = "2025-10-10T11:10:19.816Z" },
+    { url = "https://files.pythonhosted.org/packages/47/08/737aa39c78d705a7ce58248d00eeba0e9fc36be488f9b672b88736fbb1f7/psycopg2-2.9.11-cp314-cp314-win_amd64.whl", hash = "sha256:f10a48acba5fe6e312b891f290b4d2ca595fc9a06850fe53320beac353575578", size = 2803738, upload-time = "2025-10-10T11:10:23.196Z" },
+]
+
+[[package]]
 name = "pycparser"
 version = "2.23"
 source = { registry = "https://pypi.org/simple" }
@@ -768,6 +812,15 @@ wheels = [
 ]
 
 [[package]]
+name = "pydub"
+version = "0.25.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/fe/9a/e6bca0eed82db26562c73b5076539a4a08d3cffd19c3cc5913a3e61145fd/pydub-0.25.1.tar.gz", hash = "sha256:980a33ce9949cab2a569606b65674d748ecbca4f0796887fd6f46173a7b0d30f", size = 38326, upload-time = "2021-03-10T02:09:54.659Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/a6/53/d78dc063216e62fc55f6b2eebb447f6a4b0a59f55c8406376f76bf959b08/pydub-0.25.1-py2.py3-none-any.whl", hash = "sha256:65617e33033874b59d87db603aa1ed450633288aefead953b30bded59cb599a6", size = 32327, upload-time = "2021-03-10T02:09:53.503Z" },
+]
+
+[[package]]
 name = "pyjwt"
 version = "2.10.1"
 source = { registry = "https://pypi.org/simple" }
@@ -788,6 +841,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/f6/b0/4bc07ccd3572a2f9df7e6782f52b0c6c90dcbb803ac4a167702d7d0dfe1e/python_dotenv-1.1.1.tar.gz", hash = "sha256:a8a6399716257f45be6a007360200409fce5cda2661e3dec71d23dc15f6189ab", size = 41978, upload-time = "2025-06-24T04:21:07.341Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5f/ed/539768cf28c661b5b068d66d96a2f155c4971a5d55684a514c1a0e0dec2f/python_dotenv-1.1.1-py3-none-any.whl", hash = "sha256:31f23644fe2602f88ff55e1f5c79ba497e01224ee7737937930c448e4d0e24dc", size = 20556, upload-time = "2025-06-24T04:21:06.073Z" },
+]
+
+[[package]]
+name = "python-multipart"
+version = "0.0.20"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/f3/87/f44d7c9f274c7ee665a29b885ec97089ec5dc034c7f3fafa03da9e39a09e/python_multipart-0.0.20.tar.gz", hash = "sha256:8dd0cab45b8e23064ae09147625994d090fa46f5b0d1e13af944c331a7fa9d13", size = 37158, upload-time = "2024-12-16T19:45:46.972Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/45/58/38b5afbc1a800eeea951b9285d3912613f2603bdf897a4ab0f4bd7f405fc/python_multipart-0.0.20-py3-none-any.whl", hash = "sha256:8a62d3a8335e06589fe01f2a3e178cdcc632f3fbe0d492ad9ee0ec35aab1f104", size = 24546, upload-time = "2024-12-16T19:45:44.423Z" },
 ]
 
 [[package]]

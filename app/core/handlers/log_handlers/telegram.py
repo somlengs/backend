@@ -1,4 +1,5 @@
 from logging import Handler, LogRecord, Formatter
+import logging
 from typing import override
 
 from telegram import Bot
@@ -45,7 +46,10 @@ Message:  %(message)s
     def emit(self, record: LogRecord) -> None:
         try:
             message = self.format(record)
-            asyncio.get_running_loop().create_task(self.send_markdown(message))
+            asyncio.get_running_loop().create_task(self.send_markdown(
+                message,
+                disable_notification=record.levelno > logging.WARNING
+            ))
 
         except Exception:
             self.handleError(record)

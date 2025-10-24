@@ -1,8 +1,14 @@
 {
     "cSpell.words": [
+        "autoflush",
         "fastapi",
         "levelname",
+        "ondelete",
+        "POOLER",
+        "primaryjoin",
+        "sessionmaker",
         "Somleng",
+        "starlette",
         "supabase",
         "uvicorn"
     ]

@@ -4,13 +4,18 @@ import sys
 
 import uvicorn
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.v1 import load_routers
 from app.core.config import Config
 from app.core.handlers.log_handlers.telegram import TelegramLogHandler
 from app.core import logger
+from app.core.lifespan import lifespan
+from app.entities.repositories.project.base import ProjectRepo
+from app.entities.repositories.project.supabase import SupabaseProjectRepo
 
 
-app = FastAPI()
+app = FastAPI(lifespan=lifespan)
 
 
 @app.get('/')
@@ -19,6 +24,14 @@ async def root():
 
 
 def setup_server() -> uvicorn.Server:
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=Config.CORS_ORIGINS,
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     config = uvicorn.Config(
         app,
         port=Config.PORT,
@@ -31,13 +44,13 @@ def setup_server() -> uvicorn.Server:
     if loop_factory:
         asyncio.set_event_loop(loop_factory())
 
+    load_routers(app)
     return server
 
 
 def main():
     server = setup_server()
-
-    logger.add_handler(TelegramLogHandler(level=logging.WARNING))
+    # logger.add_handler(TelegramLogHandler(level=logging.WARNING))
 
     try:
         server.run()
