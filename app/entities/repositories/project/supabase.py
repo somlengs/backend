@@ -1,8 +1,12 @@
+from collections.abc import Generator
 from typing import override
+from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 from sqlalchemy.exc import NoResultFound
 
+from app.core.config import Config
 from app.entities.models.project import ProjectTable
 from .base import ProjectRepo
 
@@ -10,13 +14,25 @@ from .base import ProjectRepo
 class SupabaseProjectRepo(ProjectRepo):
 
     def __init__(self) -> None:
+        self.engine = create_engine(Config.Supabase.DATABASE_URL)
+        self.SessionLocal = sessionmaker(
+            bind=self.engine,
+            autoflush=False,
+            autocommit=False,
+            expire_on_commit=False
+        )
+
         super().__init__()
+
+    @override
+    def get_session(self) -> sessionmaker[Session]:
+        return self.SessionLocal
 
     @override
     async def get_all_projects_for_user(
         self,
         db: Session,
-        user_id: str,
+        user_id: UUID | str,
         **kwargs
     ) -> list[ProjectTable]:
         query = (
@@ -35,8 +51,8 @@ class SupabaseProjectRepo(ProjectRepo):
     async def get_project_by_id(
         self,
         db: Session,
-        project_id: str,
-        user_id: str,
+        project_id: UUID | str,
+        user_id: UUID | str,
     ) -> ProjectTable | None:
         return (
             db.query(ProjectTable)
@@ -46,7 +62,7 @@ class SupabaseProjectRepo(ProjectRepo):
         )
 
     @override
-    async def create_project(self, db: Session, user_id: str, **kwargs) -> ProjectTable:
+    async def create_project(self, db: Session, user_id: UUID | str, **kwargs) -> ProjectTable:
         project = ProjectTable(created_by=user_id, **kwargs)
         db.add(project)
         db.commit()
@@ -60,7 +76,13 @@ class SupabaseProjectRepo(ProjectRepo):
         db.refresh(project)
 
     @override
-    async def update_project(self, db: Session, project_id: str, user_id: str, **kwargs) -> ProjectTable:
+    async def update_project(
+        self,
+        db: Session,
+        project_id: UUID | str,
+        user_id: UUID | str,
+        **kwargs,
+    ) -> ProjectTable | None:
         project = (
             db.query(ProjectTable)
             .filter(ProjectTable.created_by == user_id)
@@ -68,7 +90,7 @@ class SupabaseProjectRepo(ProjectRepo):
             .one_or_none()
         )
         if project is None:
-            raise NoResultFound("Project not found or not owned by user")
+            return None
 
         for key, value in kwargs.items():
             if hasattr(project, key) and value is not None:
@@ -79,7 +101,12 @@ class SupabaseProjectRepo(ProjectRepo):
         return project
 
     @override
-    async def delete_project(self, db: Session, project_id: str, user_id: str) -> None:
+    async def delete_project(
+        self,
+        db: Session,
+        project_id: UUID | str,
+        user_id: UUID | str,
+    ) -> bool:
         project = (
             db.query(ProjectTable)
             .filter(ProjectTable.created_by == user_id)
@@ -87,7 +114,8 @@ class SupabaseProjectRepo(ProjectRepo):
             .one_or_none()
         )
         if project is None:
-            raise NoResultFound("Project not found or not owned by user")
+            return False
 
         db.delete(project)
         db.commit()
+        return True

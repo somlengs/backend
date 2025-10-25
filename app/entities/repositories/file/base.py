@@ -3,13 +3,9 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from io import BufferedReader, FileIO
 from pathlib import Path
+
 from storage3.types import UploadResponse
 
-from app.entities.types.pagination import Paginated
-from app.entities.models.project import ProjectTable
-from app.entities.models.audio_file import AudioFileTable
-from app.entities.models.auth_user import AuthUserTable
-from app.entities.models.processing_log import ProcessingLogTable
 
 
 class FileRepo(ABC):

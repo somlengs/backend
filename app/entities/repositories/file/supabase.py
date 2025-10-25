@@ -4,7 +4,7 @@ from pathlib import Path
 from typing import override
 
 from supabase import Client, create_client
-from storage3.types import UploadResponse, FileOptions
+from storage3.types import UploadResponse
 
 from app.core.config import Config
 from app.entities.types.pagination import Paginated
@@ -40,7 +40,7 @@ class SupabaseFileRepo(FileRepo):
         file_path: str,
         local_path: str | Path,
     ) -> bytes:
-        ...
+        return self.bucket.download(file_path)
 
     @override
     async def move(

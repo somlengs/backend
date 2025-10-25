@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from collections.abc import Callable
+from typing import Any
+from collections.abc import Generator
+from uuid import UUID
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, sessionmaker
 
-from app.entities.types.pagination import Paginated
 from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
@@ -21,10 +22,14 @@ class ProjectRepo(ABC):
         cls.instance = repo
 
     @abstractmethod
+    def get_session(self) -> sessionmaker[Session]:
+        ...
+
+    @abstractmethod
     async def get_all_projects_for_user(
         self,
         db: Session,
-        user_id: str,
+        user_id: UUID | str,
         **kwargs
     ) -> list[ProjectTable]:
         ...
@@ -33,13 +38,13 @@ class ProjectRepo(ABC):
     async def get_project_by_id(
         self,
         db: Session,
-        project_id: str,
-        user_id: str,
+        project_id: UUID | str,
+        user_id: UUID | str,
     ) -> ProjectTable | None:
         ...
 
     @abstractmethod
-    async def create_project(self, db: Session, user_id: str, **kwargs) -> ProjectTable:
+    async def create_project(self, db: Session, user_id: UUID | str, **kwargs) -> ProjectTable:
         ...
 
     @abstractmethod
@@ -47,9 +52,20 @@ class ProjectRepo(ABC):
         ...
 
     @abstractmethod
-    async def update_project(self, db: Session, project_id: str, user_id: str, **kwargs) -> ProjectTable:
+    async def update_project(
+        self,
+        db: Session,
+        project_id: UUID | str,
+        user_id: UUID | str,
+        **kwargs,
+    ) -> ProjectTable | None:
         ...
 
     @abstractmethod
-    async def delete_project(self, db: Session, project_id: str, user_id: str) -> None:
+    async def delete_project(
+        self,
+        db: Session,
+        project_id: UUID | str,
+        user_id: UUID | str,
+    ) -> bool:
         ...

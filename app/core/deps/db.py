@@ -1,20 +1,8 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
 
-from app.core.config import Config
-
-engine = create_engine(Config.Supabase.DATABASE_URL)
-SessionLocal = sessionmaker(
-    bind=engine,
-    autoflush=False,
-    autocommit=False,
-    expire_on_commit=False
-)
-
+from app.entities.repositories.project.base import ProjectRepo
 
 def get_db():
-    db = SessionLocal()
-    try:
+    SL = ProjectRepo.instance.get_session()
+
+    with SL() as db:
         yield db
-    finally:
-        db.close()
