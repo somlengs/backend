@@ -10,7 +10,7 @@ from pydub import AudioSegment
 
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.project import ProjectTable
-from app.entities.repositories.file.base import FileRepo
+from app.entities.repositories.sss.base import SSSRepo
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 
@@ -66,7 +66,7 @@ async def extract_zip(
                 path_raw = f'{project_id}/raw/{file_path.name}'
 
                 with open(file_path, 'rb') as f:
-                    await FileRepo.instance.upload(f, file_path=path_raw)
+                    await SSSRepo.instance.upload(f, file_path=path_raw)
 
                 audio_segment = AudioSegment.from_file(file_path)
                 duration_ms = len(audio_segment)
@@ -82,7 +82,7 @@ async def extract_zip(
                     file_size=file_path.stat().st_size,
                     duration=duration_ms,
                     format='wav',
-                    transcription_status=0,
+                    transcription_status=ProcessingStatus.draft,
                     created_at=now,
                     updated_at=now,
                 )

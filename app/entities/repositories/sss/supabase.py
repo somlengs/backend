@@ -12,10 +12,10 @@ from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
 from app.entities.models.processing_log import ProcessingLogTable
-from .base import FileRepo
+from .base import SSSRepo
 
 
-class SupabaseFileRepo(FileRepo):
+class SupabaseSSSRepo(SSSRepo):
 
     def __init__(self) -> None:
         self.client: Client = create_client(
@@ -38,7 +38,6 @@ class SupabaseFileRepo(FileRepo):
     async def download(
         self,
         file_path: str,
-        local_path: str | Path,
     ) -> bytes:
         return self.bucket.download(file_path)
 

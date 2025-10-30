@@ -62,6 +62,15 @@ class ProjectRepo(ABC):
         ...
 
     @abstractmethod
+    async def replace_project(
+        self,
+        db: Session,
+        project: ProjectTable,
+        user_id: UUID | str,
+    ) -> ProjectTable:
+        ...
+
+    @abstractmethod
     async def delete_project(
         self,
         db: Session,

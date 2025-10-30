@@ -16,10 +16,7 @@ class SupabaseProjectRepo(ProjectRepo):
     def __init__(self) -> None:
         self.engine = create_engine(Config.Supabase.DATABASE_URL)
         self.SessionLocal = sessionmaker(
-            bind=self.engine,
-            autoflush=False,
-            autocommit=False,
-            expire_on_commit=False
+            bind=self.engine, autoflush=False, autocommit=False, expire_on_commit=False
         )
 
         super().__init__()
@@ -30,15 +27,9 @@ class SupabaseProjectRepo(ProjectRepo):
 
     @override
     async def get_all_projects_for_user(
-        self,
-        db: Session,
-        user_id: UUID | str,
-        **kwargs
+        self, db: Session, user_id: UUID | str, **kwargs
     ) -> list[ProjectTable]:
-        query = (
-            db.query(ProjectTable)
-            .filter(ProjectTable.created_by == user_id)
-        )
+        query = db.query(ProjectTable).filter(ProjectTable.created_by == user_id)
         for key, value in kwargs.items():
             if value is None:
                 continue
@@ -62,7 +53,9 @@ class SupabaseProjectRepo(ProjectRepo):
         )
 
     @override
-    async def create_project(self, db: Session, user_id: UUID | str, **kwargs) -> ProjectTable:
+    async def create_project(
+        self, db: Session, user_id: UUID | str, **kwargs
+    ) -> ProjectTable:
         project = ProjectTable(created_by=user_id, **kwargs)
         db.add(project)
         db.commit()
@@ -99,6 +92,32 @@ class SupabaseProjectRepo(ProjectRepo):
         db.commit()
         db.refresh(project)
         return project
+
+    @override
+    async def replace_project(
+        self,
+        db: Session,
+        project: ProjectTable,
+        user_id: UUID | str,
+    ) -> ProjectTable:
+        existing = (
+            db.query(ProjectTable)
+            .filter(ProjectTable.id == project.id)
+            .one_or_none()
+        )
+
+        if existing is None:
+            db.add(project)
+            db.commit()
+            db.refresh(project)
+            return project
+
+        for column in ProjectTable.__table__.columns.keys():
+            setattr(existing, column, getattr(project, column))
+
+        db.commit()
+        db.refresh(existing)
+        return existing
 
     @override
     async def delete_project(

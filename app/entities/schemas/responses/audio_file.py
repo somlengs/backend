@@ -3,6 +3,8 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.entities.types.enums.processing_status import ProcessingStatus
+
 class ProjectListingAudioFileResponse(BaseModel):
     id: UUID
     file_name: str
@@ -11,7 +13,7 @@ class ProjectListingAudioFileResponse(BaseModel):
     file_size: int | None
     duration: int | None
     format: str | None
-    transcription_status: int | None
+    transcription_status: ProcessingStatus | None
     transcription_content: str | None
     error_message: str | None
     created_at: datetime

@@ -6,6 +6,8 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
+from app.entities.types.enums.processing_status import ProcessingStatus
+
 from . import Base
 
 if TYPE_CHECKING:
@@ -33,7 +35,9 @@ class AudioFileTable(Base):
     file_size: Mapped[int | None]
     duration: Mapped[int | None]
     format: Mapped[str | None]
-    transcription_status: Mapped[int] = mapped_column(nullable=False)
+    transcription_status: Mapped[ProcessingStatus] = mapped_column(
+        nullable=False, default=ProcessingStatus.draft
+    )
     transcription_content: Mapped[str | None]
     error_message: Mapped[str | None]
     processing_started_at: Mapped[datetime | None]
