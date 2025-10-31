@@ -14,9 +14,10 @@ from app.entities.repositories.sss.base import SSSRepo
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 
+
 def create_project(
     user_id: uuid.UUID,
-    project_name: str = 'New Project',
+    project_name: str,
     description: str | None = None,
 ) -> ProjectTable:
     id = uuid.uuid4()

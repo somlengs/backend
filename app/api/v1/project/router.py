@@ -28,16 +28,20 @@ router = api.APIRouter(prefix='/project')
 
 @router.post('/')
 async def post(
-    file: api.UploadFile = api.File(...),
+    files: list[api.UploadFile] = api.File(...),
+    name: str = api.Form('New Project'),
+    description: str | None = api.Form(None),
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
+    new_project = service.create_project(UUID(user.id), name, description)
+    all_files: list = []
 
-    new_project = service.create_project(UUID(user.id))
+    for file in files:
+        extracted = await service.extract_zip(file, new_project.id, UUID(user.id))
+        all_files.extend(extracted)
 
-    files = await service.extract_zip(file, new_project.id, UUID(user.id))
-
-    new_project.files = files
+    new_project.files = all_files
     await ProjectRepo.instance.add_project(db, new_project)
     return project_model_to_schema(new_project)
 
@@ -138,15 +142,39 @@ async def process_project(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    return api.responses.StreamingResponse(
-        simulate_task_progress(project_id),
-        media_type="text/event-stream",
+    project = await ProjectRepo.instance.get_project_by_id(
+        db,
+        str(project_id),
+        user.id,
     )
 
+    if project is None:
+        raise api.HTTPException(
+            api.status.HTTP_404_NOT_FOUND,
+            'Project not found'
+        )
+    # return api.responses.StreamingResponse(
+    #     simulate_task_progress(project_id),
+    #     media_type="text/event-stream",
+    # )
+    ...
 
-async def simulate_task_progress(task_id: UUID):
-    """Temporary for testing"""
-    for i in range(0, 101, 10):
-        yield f"data: {{\"task_id\": \"{task_id}\", \"progress\": {i}}}\n\n"
-        await asyncio.sleep(0.5)
-    yield f"data: {{\"task_id\": \"{task_id}\", \"status\": \"completed\"}}\n\n"
+
+@router.get('/{project_id}/download')
+async def download_project(
+    project_id: UUID,
+    user: AuthUser = api.Depends(auth_user),
+    db: Session = api.Depends(get_db),
+):
+    project = await ProjectRepo.instance.get_project_by_id(
+        db,
+        str(project_id),
+        user.id,
+    )
+
+    if project is None:
+        raise api.HTTPException(
+            api.status.HTTP_404_NOT_FOUND,
+            'Project not found'
+        )
+    ...
