@@ -36,7 +36,7 @@ class AudioFileTable(Base):
     duration: Mapped[int | None]
     format: Mapped[str | None]
     transcription_status: Mapped[ProcessingStatus] = mapped_column(
-        nullable=False, default=ProcessingStatus.draft
+        nullable=False, default=ProcessingStatus.pending
     )
     transcription_content: Mapped[str | None]
     error_message: Mapped[str | None]

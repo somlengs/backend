@@ -10,10 +10,26 @@ from app.entities.dto.responses.project import project_model_to_schema
 from app.entities.repositories.project.base import ProjectRepo
 from app.entities.schemas.auth_user import AuthUser
 from app.entities.schemas.requests.audio_file import UpdateAudioFileSchema
+from app.entities.types.enums.ordering import Ordering
+from app.entities.types.enums.sorting import AudioFileSorting
 
 
 router = api.APIRouter(prefix='/project')
 
+
+@router.get('/{project_id}/files')
+async def get_files(
+    project_id: UUID,
+    skip: int = api.Query(0, ge=0),
+    limit: int = api.Query(50, ge=1),
+    name: str = api.Query(''),
+    status: str | None = api.Query(None),
+    sort: AudioFileSorting | None = api.Query(None),
+    order: Ordering = api.Query(Ordering.desc),
+    user: AuthUser = api.Depends(auth_user),
+    db: Session = api.Depends(get_db),
+):
+    ...
 
 @router.post('/{project_id}/files')
 async def add_file(
@@ -45,7 +61,7 @@ async def add_file(
         project,
         user.id,
     )
-    
+
     return project_model_to_schema(project)
 
 

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 from io import BufferedReader, BytesIO, FileIO
 from pathlib import Path
 from typing import override
@@ -32,7 +33,12 @@ class SupabaseSSSRepo(SSSRepo):
         data: BufferedReader | bytes | FileIO | str | Path,
         file_path: str,
     ) -> UploadResponse:
-        return self.bucket.upload(file_path, data, file_options={'content-type': 'audio/wav'})
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None,
+            lambda: self.bucket.upload(file_path, data, file_options={
+                                       'content-type': 'audio/wav'})
+        )
 
     @override
     async def download(

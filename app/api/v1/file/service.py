@@ -47,7 +47,7 @@ async def add_file_to_project(
             file_size=file_path.stat().st_size,
             duration=duration_ms,
             format='wav',
-            transcription_status=ProcessingStatus.draft,
+            transcription_status=ProcessingStatus.pending,
             created_at=now,
             updated_at=now,
         )

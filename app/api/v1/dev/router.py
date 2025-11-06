@@ -3,9 +3,11 @@ import fastapi as api
 
 from app.core.config import Config
 from app.entities.schemas.requests.login import LoginRequest
+from app.core.logger import get
 
 router = api.APIRouter(prefix='/dev')
 
+logger = get()
 
 @router.post('/login')
 async def login(body: LoginRequest):
@@ -19,11 +21,14 @@ async def login(body: LoginRequest):
             },
         )
 
+    data = resp.json()
 
     if resp.status_code != 200:
-        raise api.HTTPException(status_code=resp.status_code, detail=resp.text)
+        data['message'] = data['msg']
+        del data['msg']
+        logger.warning(data['message'])
+        raise api.HTTPException(status_code=data.status_code, detail=data)
 
-    data = resp.json()
     return {
         "access_token": data.get("access_token"),
         "user": data.get("user"),

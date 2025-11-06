@@ -2,16 +2,17 @@ import uuid
 from typing import TYPE_CHECKING
 from datetime import datetime
 
-from sqlalchemy import ForeignKey
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import ForeignKey, select, func
+from sqlalchemy.orm import Mapped, mapped_column, relationship, object_session
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 from . import Base
 
+from .audio_file import AudioFileTable
 if TYPE_CHECKING:
-    from .audio_file import AudioFileTable
     from .auth_user import AuthUserTable
 
 
@@ -28,7 +29,7 @@ class ProjectTable(Base):
     description: Mapped[str | None]
     status: Mapped[ProcessingStatus] = mapped_column(
         nullable=False,
-        default=ProcessingStatus.draft,
+        default=ProcessingStatus.loading,
     )
     progress: Mapped[int] = mapped_column(nullable=False, default=0)
     project_path: Mapped[str] = mapped_column(nullable=False)
@@ -63,3 +64,14 @@ class ProjectTable(Base):
         uselist=False,
         back_populates='projects',
     )
+
+    # Properties
+    @hybrid_property
+    def num_of_files(self) -> int:
+        session = object_session(self)
+        if session is None or self.id is None:
+            return len(self.files) if self.files is not None else 0
+
+        return session.scalar(
+            select(func.count(AudioFileTable.id)).where(AudioFileTable.project_id == self.id)
+        ) or 0

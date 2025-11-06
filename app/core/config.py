@@ -27,6 +27,7 @@ class Config:
 
     PEM_KEY: bytes
     JWT_SECRET=require_env('JWT_SECRET')
+    SUPPORTED_AUDIO_EXTS = ('wav', 'mp3', 'flac', 'aac', 'm4a', 'ogg')
 
     class Supabase:
         URL: str = require_env('SUPABASE_URL')

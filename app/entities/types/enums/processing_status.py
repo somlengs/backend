@@ -1,8 +1,18 @@
+from __future__ import annotations
+
 from enum import StrEnum
 
 
 class ProcessingStatus(StrEnum):
-    draft = 'draft'
-    in_progress = 'in_progress'
+    loading = 'loading'
+    pending = 'pending'
+    processing = 'processing'
     completed = 'completed'
-    archived = 'archived'
+    error = 'error'
+
+    @classmethod
+    def from_str(cls, value: str) -> ProcessingStatus:
+        try:
+            return cls(value)
+        except ValueError as e:
+            raise ValueError(f'Invalid status: {value!r}') from e
