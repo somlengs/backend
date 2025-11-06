@@ -11,6 +11,7 @@ from app.core.config import Config
 from app.core.handlers.log_handlers.telegram import TelegramLogHandler
 from app.core import logger
 from app.core.lifespan import lifespan
+from app.core.middlewares.logger import ExceptionLoggingMiddleware
 from app.entities.repositories.project.base import ProjectRepo
 from app.entities.repositories.project.supabase import SupabaseProjectRepo
 
@@ -50,6 +51,7 @@ def setup_server() -> uvicorn.Server:
 
 def main():
     server = setup_server()
+    app.add_middleware(ExceptionLoggingMiddleware)
     # logger.add_handler(TelegramLogHandler(level=logging.WARNING))
 
     try:

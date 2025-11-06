@@ -1,11 +1,14 @@
+from sqlalchemy.orm import Session
+
+
 from app.entities.dto.responses.audio_file import audio_file_model_to_schema
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.project import ProjectTable
-from app.entities.schemas.responses.project import ProjectListingResponse
+from app.entities.schemas.responses.project import Project
 
 
-def project_model_to_schema(project: ProjectTable) -> ProjectListingResponse:
-    return ProjectListingResponse(
+def project_model_to_schema(project: ProjectTable) -> Project:
+    return Project(
         id=project.id,
         name=project.name,
         description=project.description,
@@ -14,5 +17,5 @@ def project_model_to_schema(project: ProjectTable) -> ProjectListingResponse:
         project_path=project.project_path,
         created_at=project.created_at,
         updated_at=project.updated_at,
-        files=[audio_file_model_to_schema(f) for f in project.files]
+        num_of_files=project.num_of_files,
     )

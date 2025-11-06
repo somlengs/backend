@@ -11,6 +11,8 @@ from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
 from app.entities.models.processing_log import ProcessingLogTable
+from app.entities.schemas.params.listing.project import ProjectListingParams
+from app.entities.types.pagination import Paginated
 
 
 class ProjectRepo(ABC):
@@ -30,8 +32,8 @@ class ProjectRepo(ABC):
         self,
         db: Session,
         user_id: UUID | str,
-        **kwargs
-    ) -> list[ProjectTable]:
+        params: ProjectListingParams
+    ) -> Paginated[ProjectTable]:
         ...
 
     @abstractmethod

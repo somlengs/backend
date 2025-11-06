@@ -2,69 +2,98 @@ import asyncio
 from tempfile import TemporaryDirectory
 from zipfile import ZipFile
 from uuid import UUID
+from typing import Annotated
 
 import fastapi as api
 from sqlalchemy.orm import Session
+from fastapi.responses import StreamingResponse
 
-from app.api.v1.project import service
+from .services import *
 from app.core.deps.auth import auth_user
 from app.core.deps.db import get_db
+from app.core.logger import get as get_logger
 from app.entities.dto.responses.audio_file import audio_file_model_to_schema
 from app.entities.dto.responses.project import project_model_to_schema
 from app.entities.schemas.auth_user import AuthUser
+from app.entities.schemas.params.listing.project import ProjectListingParams
 from app.entities.schemas.requests.project import UpdateProjectSchema
+from app.entities.types.enums.ordering import Ordering
+from app.entities.types.enums.processing_status import ProcessingStatus
+from app.entities.types.enums.sorting import ProjectSorting
 from app.entities.types.pagination import Paginated
 from app.entities.models.project import ProjectTable
 from app.entities.models.auth_user import AuthUserTable
 from app.entities.models.processing_log import ProcessingLogTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.repositories.project.base import ProjectRepo
-from app.entities.schemas.responses.project import ProjectListingResponse
+from app.entities.schemas.responses.project import Project
 from app.shared.utils.other import paginate
 
 
 router = api.APIRouter(prefix='/project')
 
+logger = get_logger()
+
 
 @router.post('/')
-async def post(
-    files: list[api.UploadFile] = api.File(...),
+async def new_project(
+    files: list[api.UploadFile],
+    background: api.BackgroundTasks,
     name: str = api.Form('New Project'),
     description: str | None = api.Form(None),
     user: AuthUser = api.Depends(auth_user),
-    db: Session = api.Depends(get_db),
 ):
-    new_project = service.create_project(UUID(user.id), name, description)
-    all_files: list = []
+    service = NewProjectService(
+        files,
+        name,
+        description,
+        user,
+    )
+    try:
+        service.validate_data()
+        
+        service.create_project_instance()
+        await service.upload_project()
+        await service.extract_zip()
+        
+        num_of_files = len(service.files_to_process)
 
-    for file in files:
-        extracted = await service.extract_zip(file, new_project.id, UUID(user.id))
-        all_files.extend(extracted)
-
-    new_project.files = all_files
-    await ProjectRepo.instance.add_project(db, new_project)
-    return project_model_to_schema(new_project)
-
+        background.add_task(service.process_files)
+        res = project_model_to_schema(service.project)
+        res.num_of_files = num_of_files
+        return res
+    except Exception:
+        service.close()
+        raise
+        
 
 @router.get('/')
 async def get_all(
-    skip: int = api.Query(0, ge=0),
+    offset: int = api.Query(0, ge=0),
     limit: int = api.Query(20, ge=1),
-    status: str | None = api.Query(default=None),
+    name: str = api.Query(''),
+    status: ProcessingStatus | None = api.Query(None),
+    sort: ProjectSorting = api.Query(ProjectSorting.updated_at),
+    order: Ordering = api.Query(Ordering.desc),
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
-) -> Paginated[ProjectListingResponse]:
+) -> Paginated[Project]:
     all = await ProjectRepo.instance.get_all_projects_for_user(
         db,
         user.id,
-        status=status,
+        ProjectListingParams(
+            project_name=name,
+            status=status,
+            limit=limit,
+            offset=offset,
+            sort=sort,
+            order=order,
+        )
     )
 
-    paginated = paginate(all, skip=skip, limit=limit)
-
     return {
-        'data': [project_model_to_schema(x) for x in paginated['data']],
-        'pagination': paginated['pagination']
+        'data': [project_model_to_schema(x) for x in all['data']],
+        'pagination': all['pagination']
     }
 
 
@@ -127,7 +156,7 @@ async def delete(
     if did_delete:
         return api.responses.JSONResponse(
             status_code=api.status.HTTP_200_OK,
-            content={'message': 'Project deleted successfully'}
+            content={'detail': 'Project deleted successfully'}
         )
 
     raise api.HTTPException(

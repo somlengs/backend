@@ -1,9 +1,9 @@
 from app.entities.models.audio_file import AudioFileTable
-from app.entities.schemas.responses.audio_file import ProjectListingAudioFileResponse
+from app.entities.schemas.responses.audio_file import ProjectAudioFileDetailResponse
 
 
-def audio_file_model_to_schema(file: AudioFileTable) -> ProjectListingAudioFileResponse:
-    return ProjectListingAudioFileResponse(
+def audio_file_model_to_schema(file: AudioFileTable) -> ProjectAudioFileDetailResponse:
+    return ProjectAudioFileDetailResponse(
         id=file.id,
         file_name=file.file_name,
         file_path_raw=file.file_path_raw,

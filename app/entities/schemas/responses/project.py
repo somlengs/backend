@@ -1,12 +1,15 @@
+from __future__ import annotations
+
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
+from app.entities.models.project import ProjectTable
 from app.entities.types.enums.processing_status import ProcessingStatus
-from app.entities.schemas.responses.audio_file import ProjectListingAudioFileResponse
 
-class ProjectListingResponse(BaseModel):
+
+class Project(BaseModel):
     id: UUID
     name: str
     description: str | None
@@ -15,4 +18,4 @@ class ProjectListingResponse(BaseModel):
     project_path: str
     created_at: datetime
     updated_at: datetime
-    files: list[ProjectListingAudioFileResponse]
+    num_of_files: int

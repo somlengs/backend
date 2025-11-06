@@ -1,10 +1,14 @@
+import asyncio
 from math import ceil
 import os
 from collections.abc import Callable, Iterable
+from pathlib import Path
 from typing import Literal, cast
 
 from app.entities.types.pagination import Paginated
+from app.core.logger import get as get_logger
 
+logger = get_logger()
 
 def require_env[T](key: str, t: type[T] | Callable[[str], T] = str) -> T:
     value = os.getenv(key)
@@ -42,10 +46,30 @@ def paginate[T](data: list[T], skip: int = 0, limit: int = 100) -> Paginated[T]:
 
     paginated = data[skip:skip + limit]
     return {
-        "data": paginated,
-        "pagination": {
-            "limit": limit,
-            "page": current_page,
-            "total_page": total_pages,
+        'data': paginated,
+        'pagination': {
+            'limit': limit,
+            'page': current_page,
+            'total_page': total_pages,
+            'total_items': total_items,
         }
     }
+
+
+async def convert_to_wav(path: Path) -> Path:
+
+        if path.name.endswith('.wav'):
+            return path
+        
+        output_path = path.with_suffix('wav')
+        
+        process = await asyncio.create_subprocess_exec(
+            'ffmpeg', '-y', '-i', str(path), str(output_path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        stdout, stderr = await process.communicate()
+        if process.returncode != 0:
+            logger.warning(stderr.decode())
+            raise RuntimeError(f'Failed to convert {path}')
+        return output_path
