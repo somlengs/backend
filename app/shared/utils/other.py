@@ -3,6 +3,7 @@ from math import ceil
 import os
 from collections.abc import Callable, Iterable
 from pathlib import Path
+import time
 from typing import Literal, cast
 
 from app.entities.types.pagination import Paginated
@@ -57,11 +58,12 @@ def paginate[T](data: list[T], skip: int = 0, limit: int = 100) -> Paginated[T]:
 
 
 async def convert_to_wav(path: Path) -> Path:
-
         if path.name.endswith('.wav'):
+            logger.debug('Already a wav file, ignored.')
             return path
         
         output_path = path.with_suffix('wav')
+        t0 = time.perf_counter()
         
         process = await asyncio.create_subprocess_exec(
             'ffmpeg', '-y', '-i', str(path), str(output_path),
@@ -72,4 +74,6 @@ async def convert_to_wav(path: Path) -> Path:
         if process.returncode != 0:
             logger.warning(stderr.decode())
             raise RuntimeError(f'Failed to convert {path}')
+        
+        logger.info(f'Converted "{path.name}" to "{output_path.name}" ({(time.perf_counter() - t0):.4f}s)')
         return output_path
