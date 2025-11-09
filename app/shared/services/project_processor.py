@@ -28,7 +28,10 @@ class ProjectProcessor:
         project: ProjectTable,
         db: Session,
     ):
-        if project.status != ProcessingStatus.draft:
+        if project.status == ProcessingStatus.loading:
+            raise HTTPException(
+                status_code=400, detail='Project is loading')
+        if project.status != ProcessingStatus.pending:
             raise HTTPException(
                 status_code=400, detail='Project already started')
 
