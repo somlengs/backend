@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID
 
 from app.entities.types.enums.processing_status import ProcessingStatus
 
-from . import Base
+from .__base__ import Base
 
 if TYPE_CHECKING:
     from .project import ProjectTable

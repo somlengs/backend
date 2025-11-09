@@ -9,7 +9,7 @@ from sqlalchemy.ext.hybrid import hybrid_property
 
 from app.entities.types.enums.processing_status import ProcessingStatus
 
-from . import Base
+from .__base__ import Base
 
 from .audio_file import AudioFileTable
 if TYPE_CHECKING:

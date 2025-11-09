@@ -1,5 +1,12 @@
-from sqlalchemy.orm import DeclarativeBase
+from .auth_user import AuthUserTable
+from .audio_file import AudioFileTable
+from .processing_log import ProcessingLogTable
+from .project import ProjectTable
 
 
-class Base(DeclarativeBase):
-    ...
+__all__ = [
+    'AuthUserTable',
+    'AudioFileTable',
+    'ProcessingLogTable',
+    'ProjectTable',
+]

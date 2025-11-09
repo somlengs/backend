@@ -52,7 +52,7 @@ def setup_server() -> uvicorn.Server:
 def main():
     server = setup_server()
     app.add_middleware(ExceptionLoggingMiddleware)
-    # logger.add_handler(TelegramLogHandler(level=logging.WARNING))
+    logger.add_handler(TelegramLogHandler(level=logging.WARNING))
 
     try:
         server.run()
