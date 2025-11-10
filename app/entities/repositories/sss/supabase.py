@@ -61,3 +61,10 @@ class SupabaseSSSRepo(SSSRepo):
         file_path: str,
     ) -> bytes:
         ...
+
+    @override
+    async def exists(
+        self,
+        file_path: str,
+    ) -> bool:
+        return self.bucket.exists(file_path)

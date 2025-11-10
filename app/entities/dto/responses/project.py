@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from app.entities.dto.responses.audio_file import audio_file_model_to_schema
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.project import ProjectTable
-from app.entities.schemas.responses.project import Project
+from app.entities.schemas.project import Project
 
 
 def project_model_to_schema(project: ProjectTable) -> Project:

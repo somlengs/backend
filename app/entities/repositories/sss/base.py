@@ -45,3 +45,10 @@ class SSSRepo(ABC):
         file_path: str,
     ) -> bytes:
         ...
+
+    @abstractmethod
+    async def exists(
+        self,
+        file_path: str,
+    ) -> bool:
+        ...

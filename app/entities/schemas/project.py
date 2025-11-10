@@ -1,11 +1,8 @@
-from __future__ import annotations
-
 from datetime import datetime
 from uuid import UUID
 
 from pydantic import BaseModel
 
-from app.entities.models.project import ProjectTable
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 

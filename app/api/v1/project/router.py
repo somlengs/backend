@@ -18,7 +18,7 @@ from app.entities.types.enums.processing_status import ProcessingStatus
 from app.entities.types.enums.sorting import ProjectSorting
 from app.entities.types.pagination import Paginated
 from app.entities.repositories.project.base import ProjectRepo
-from app.entities.schemas.responses.project import Project
+from app.entities.schemas.project import Project
 
 router = api.APIRouter(prefix='/project')
 logger = get()
@@ -59,15 +59,15 @@ async def new_project(
         return res
 
     except Exception as exc:
-        logger.error('Project creation failed', exc_info=True)
+        logger.error(f'Project creation failed: {exc.args[0]}', exc_info=True)
         service.close()
         raise
 
 
 @router.get('/')
 async def get_all(
-    offset: int = api.Query(0, ge=0),
-    limit: int = api.Query(20, ge=1),
+    page: int = api.Query(1, ge=1),
+    limit: int = api.Query(20, ge=1, le=100),
     name: str = api.Query(""),
     status: ProcessingStatus | None = api.Query(None),
     sort: ProjectSorting = api.Query(ProjectSorting.updated_at),
@@ -76,24 +76,26 @@ async def get_all(
     db: Session = api.Depends(get_db),
 ) -> Paginated[Project]:
     logger.info("Fetch project list")
-    logger.debug(f"user={user.id} offset={offset} limit={limit} sort={sort} order={order} status={status}")
+    logger.debug(f"user={user.id} page={page} limit={limit} sort={sort} order={order} status={status}")
+
 
     result = await ProjectRepo.instance.get_all_projects_for_user(
         db,
         user.id,
         ProjectListingParams(
+            page=page,
+            limit=limit,
             project_name=name,
             status=status,
-            limit=limit,
-            offset=offset,
             sort=sort,
             order=order,
-        )
+        ),
+        mapper=project_model_to_schema,
     )
 
     logger.info(f"Returned {len(result['data'])} projects")
     return {
-        "data": [project_model_to_schema(x) for x in result["data"]],
+        "data": result["data"],
         "pagination": result["pagination"]
     }
 
@@ -126,7 +128,7 @@ async def patch(
     logger.debug(f"Payload: {body.model_dump()}")
 
     project = await ProjectRepo.instance.update_project(
-        db, project_id, user.id, **body.model_dump()
+        db, project_id, user.id, body
     )
 
     if not project:
@@ -146,6 +148,7 @@ async def delete(
     logger.info(f"Deleting project {project_id}")
 
     did_delete = await ProjectRepo.instance.delete_project(db, project_id, user.id)
+    
     if not did_delete:
         logger.warning(f"Delete failed, project {project_id} not found")
         raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
@@ -165,10 +168,7 @@ async def process_project(
 ):
     logger.info(f"Process trigger requested for project {project_id}")
 
-    project = await ProjectRepo.instance.get_project_by_id(db, str(project_id), user.id)
-    if not project:
-        logger.warning(f"Process denied, project {project_id} not found")
-        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
+    project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
 
     logger.debug(f"Project {project_id} ready for processing trigger")
     ...
@@ -182,10 +182,7 @@ async def download_project(
 ):
     logger.info(f"Download requested for project {project_id}")
 
-    project = await ProjectRepo.instance.get_project_by_id(db, str(project_id), user.id)
-    if not project:
-        logger.warning(f"Download failed, project {project_id} not found")
-        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
-
+    project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
+    
     logger.debug(f"Project {project_id} download authorized")
     ...

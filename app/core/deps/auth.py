@@ -31,8 +31,6 @@ def auth_user(request: Request) -> AuthUser:
         logger.warning('Auth failed: token missing subject (sub)')
         raise HTTPException(401, 'Invalid token payload')
 
-    logger.debug(f'Auth success: user={sub}')
-
     return AuthUser(
         id=sub,
         email=payload.get('email'),

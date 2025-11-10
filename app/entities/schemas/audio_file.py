@@ -6,8 +6,9 @@ from pydantic import BaseModel
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 
-class ProjectAudioFileDetailResponse(BaseModel):
+class AudioFile(BaseModel):
     id: UUID
+    project_id: UUID
     file_name: str
     file_path_raw: str
     file_path_cleaned: str | None

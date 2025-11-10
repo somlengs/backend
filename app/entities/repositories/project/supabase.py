@@ -1,18 +1,17 @@
-from collections.abc import Generator
-from math import ceil
+from collections.abc import Callable
 from typing import override
 from uuid import UUID
 
+from fastapi import HTTPException, status
 from sqlalchemy import create_engine, func
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy.exc import NoResultFound
 
 from app.core.config import Config
 from app.entities.models.project import ProjectTable
 from app.entities.schemas.params.listing.project import ProjectListingParams
-from app.entities.types.enums.ordering import Ordering
+from app.entities.schemas.requests.project import UpdateProjectSchema
 from app.entities.types.enums.processing_status import ProcessingStatus
-from app.entities.types.pagination import Paginated, PaginationMeta
+from app.entities.types.pagination import Paginated
 from app.shared.utils.query import paginate_query
 from .base import ProjectRepo
 
@@ -32,16 +31,18 @@ class SupabaseProjectRepo(ProjectRepo):
         return self.SessionLocal
 
     @override
-    async def get_all_projects_for_user(
+    async def get_all_projects_for_user[T](
         self,
         db: Session,
         user_id: UUID | str,
         params: ProjectListingParams,
-    ) -> Paginated[ProjectTable]:
+        *,
+        mapper: Callable[[ProjectTable], T] = lambda x: x,
+    ) -> Paginated[T]:
         name: str = params.project_name
         status: str | None = params.status
         limit = params.limit
-        offset = params.offset
+        page = params.page
         sort = params.sort
         order = params.order
 
@@ -53,13 +54,12 @@ class SupabaseProjectRepo(ProjectRepo):
                 ProjectTable.name).like(f"%{name.lower()}%"))
 
         if status is not None:
-            s = ProcessingStatus.from_str(status)
-            query = query.filter(ProjectTable.status == s)
+            query = query.filter(ProjectTable.status == status)
 
         sort_col = sort.column()
         query = order.apply(query, sort_col)
 
-        return paginate_query(db, query, limit=limit, offset=offset)
+        return paginate_query(db, query, limit=limit, page=page, mapper=mapper)
 
     @override
     async def get_project_by_id(
@@ -97,20 +97,18 @@ class SupabaseProjectRepo(ProjectRepo):
         db: Session,
         project_id: UUID | str,
         user_id: UUID | str,
-        **kwargs,
+        data: UpdateProjectSchema,
     ) -> ProjectTable | None:
         project = (
             db.query(ProjectTable)
-            .filter(ProjectTable.created_by == user_id)
             .filter(ProjectTable.id == project_id)
+            .filter(ProjectTable.created_by == user_id)
             .one_or_none()
         )
         if project is None:
             return None
 
-        for key, value in kwargs.items():
-            if hasattr(project, key) and value is not None:
-                setattr(project, key, value)
+        data.update(project)
 
         db.commit()
         db.refresh(project)
@@ -122,14 +120,17 @@ class SupabaseProjectRepo(ProjectRepo):
         db: Session,
         project: ProjectTable,
         user_id: UUID | str,
+        exists_only: bool = False,
     ) -> ProjectTable:
-        existing = (
-            db.query(ProjectTable)
-            .filter(ProjectTable.id == project.id)
-            .one_or_none()
-        )
+        existing = await self.get_project_by_id(db, project.id, user_id)
 
         if existing is None:
+            if exists_only:
+                raise HTTPException(
+                    status.HTTP_404_NOT_FOUND,
+                    'Project not found',
+                )
+
             db.add(project)
             db.commit()
             db.refresh(project)
@@ -149,12 +150,8 @@ class SupabaseProjectRepo(ProjectRepo):
         project_id: UUID | str,
         user_id: UUID | str,
     ) -> bool:
-        project = (
-            db.query(ProjectTable)
-            .filter(ProjectTable.created_by == user_id)
-            .filter(ProjectTable.id == project_id)
-            .one_or_none()
-        )
+        project = await self.get_project_by_id(db, project_id, user_id)
+        
         if project is None:
             return False
 
