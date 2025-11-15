@@ -55,7 +55,10 @@ class ProjectProcessor:
 
         async def generator():
             try:
-                yield cls.log_to_json_str(task.logs[0])
+                last_log = task.logs[0]
+                yield cls.log_to_json_str(last_log)
+                if last_log.stop_connections:
+                    return
             except IndexError:
                 pass
             while True:
