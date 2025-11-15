@@ -8,7 +8,6 @@ from .__base__ import Base
 if TYPE_CHECKING:
     from .audio_file import AudioFileTable
     from .project import ProjectTable
-    from .processing_log import ProcessingLogTable
 
 
 class AuthUserTable(Base):
@@ -26,11 +25,6 @@ class AuthUserTable(Base):
     )
     projects: Mapped[list['ProjectTable']] = relationship(
         'ProjectTable',
-        uselist=True,
-        back_populates='user',
-    )
-    processing_logs: Mapped[list['ProcessingLogTable']] = relationship(
-        'ProcessingLogTable',
         uselist=True,
         back_populates='user',
     )

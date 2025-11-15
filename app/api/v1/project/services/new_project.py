@@ -132,9 +132,9 @@ class NewProjectService:
 
         logger.info(f'Extraction completed: {len(self.files_to_process)} files ready ({(time.perf_counter() - t0):.4f}s)')
 
-    async def process_files(self) -> None:
+    async def upload_files(self) -> None:
         t0 = time.perf_counter()
-        logger.info(f'Processing {len(self.files_to_process)} file(s) for project {self.id}')
+        logger.info(f'Uploading {len(self.files_to_process)} file(s) for project {self.id}')
 
         try:
             for idx, file in enumerate(self.files_to_process, 1):

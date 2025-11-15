@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, UTC
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
@@ -20,3 +21,5 @@ class UpdateProjectSchema(BaseModel):
                 project.description = self.description
             else:
                 project.description = None
+                
+        project.updated_at = datetime.now(UTC)

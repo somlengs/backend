@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
 from pydantic import BaseModel, Field
@@ -14,3 +15,5 @@ class UpdateAudioFileSchema(BaseModel):
         if self.file_name:
             *file_names, ext = file.file_name.split('.')
             file.file_name = f'{self.file_name}.{ext}'
+            
+        file.updated_at = datetime.now(UTC)

@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import override
 from uuid import UUID
 
@@ -130,7 +131,6 @@ class SupabaseProjectRepo(ProjectRepo):
                     status.HTTP_404_NOT_FOUND,
                     'Project not found',
                 )
-
             db.add(project)
             db.commit()
             db.refresh(project)
@@ -138,6 +138,7 @@ class SupabaseProjectRepo(ProjectRepo):
 
         for column in ProjectTable.__table__.columns.keys():
             setattr(existing, column, getattr(project, column))
+        existing.updated_at = datetime.now(UTC)
 
         db.commit()
         db.refresh(existing)

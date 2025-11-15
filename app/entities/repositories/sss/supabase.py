@@ -12,7 +12,6 @@ from app.entities.types.pagination import Paginated
 from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
-from app.entities.models.processing_log import ProcessingLogTable
 from .base import SSSRepo
 
 

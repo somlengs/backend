@@ -4,6 +4,8 @@ from uuid import UUID
 import fastapi as api
 from sqlalchemy.orm import Session
 
+from app.shared.services.project_processor import ProjectProcessor
+
 from .services import *
 from app.core.deps.auth import auth_user
 from app.core.deps.db import get_db
@@ -24,7 +26,7 @@ router = api.APIRouter(prefix='/project')
 logger = get()
 
 
-@router.post('/')
+@router.post('')
 async def new_project(
     files: list[api.UploadFile],
     background: api.BackgroundTasks,
@@ -49,8 +51,8 @@ async def new_project(
 
         num_of_files = len(service.files_to_process)
 
-        background.add_task(service.process_files)
-        logger.debug('Background processing task scheduled')
+        background.add_task(service.upload_files)
+        logger.debug('Background uploading task scheduled')
 
         res = project_model_to_schema(service.project)
         res.num_of_files = num_of_files
@@ -64,7 +66,7 @@ async def new_project(
         raise
 
 
-@router.get('/')
+@router.get('')
 async def get_all(
     page: int = api.Query(1, ge=1),
     limit: int = api.Query(20, ge=1, le=100),
@@ -169,9 +171,41 @@ async def process_project(
     logger.info(f"Process trigger requested for project {project_id}")
 
     project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
+    
+    if project.status == ProcessingStatus.loading:
+        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is loading.')
+    if project.status != ProcessingStatus.pending:
+        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is already started.')
 
-    logger.debug(f"Project {project_id} ready for processing trigger")
-    ...
+    ProjectProcessor.start(project)
+    
+    return {
+        'detail': 'Project started processing'
+    }
+
+@router.get('/{project_id}/process')
+async def get_processing_project(
+    project_id: UUID,
+    user: AuthUser = api.Depends(auth_user),
+    db: Session = api.Depends(get_db),
+) -> api.responses.StreamingResponse:
+    logger.info(f"Process trigger requested for project {project_id}")
+
+    project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
+    
+    if project.status == ProcessingStatus.loading:
+        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is loading.')
+    if project.status == ProcessingStatus.pending:
+        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project has not started')
+    
+    update_stream =  ProjectProcessor.get_stream(project_id)
+    
+    return api.responses.StreamingResponse(
+        update_stream(),
+        media_type="text/event-stream"
+    )
+    
+    
 
 
 @router.get('/{project_id}/download')

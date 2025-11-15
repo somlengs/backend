@@ -1,4 +1,5 @@
 from collections.abc import Callable
+from datetime import UTC, datetime
 from typing import override
 from uuid import UUID
 
@@ -173,7 +174,7 @@ class SupabaseAudioFileRepo(AudioFileRepo):
 
         for column in ProjectTable.__table__.columns.keys():
             setattr(existing, column, getattr(file, column))
-
+        existing.updated_at = datetime.now(UTC)
         db.commit()
         db.refresh(existing)
         return existing

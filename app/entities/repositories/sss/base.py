@@ -7,7 +7,6 @@ from pathlib import Path
 from storage3.types import UploadResponse
 
 
-
 class SSSRepo(ABC):
 
     instance: SSSRepo

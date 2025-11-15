@@ -10,6 +10,8 @@ from app.entities.repositories.sss.base import SSSRepo
 from app.entities.repositories.sss.supabase import SupabaseSSSRepo
 from app.entities.repositories.project.base import ProjectRepo
 from app.entities.repositories.project.supabase import SupabaseProjectRepo
+from app.entities.repositories.stt.base import STTRepo
+from app.entities.repositories.stt.mock import MockSTTRepo
 
 
 @asynccontextmanager
@@ -18,5 +20,6 @@ async def lifespan(app: FastAPI):
     ProjectRepo.init(SupabaseProjectRepo())
     AudioFileRepo.init(SupabaseAudioFileRepo())
     SSSRepo.init(SupabaseSSSRepo())
+    STTRepo.init(MockSTTRepo())
     yield
     logger.warning('Server shut down')
