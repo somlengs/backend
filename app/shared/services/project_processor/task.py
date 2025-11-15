@@ -74,6 +74,7 @@ class ProcessingTask:
             task_statuses=task_statuses,
             stop_connections=stop_connections,
         )
+        self.logs.insert(0, log)
 
         for q in queues:
             await q.put(log)
@@ -96,6 +97,7 @@ class ProcessingTask:
 
         t0 = time.perf_counter()
         logger.info(f'Processing started for project {self.project.id}')
+        await self._notify_listeners('Started')
 
         files = self.project.files
 
