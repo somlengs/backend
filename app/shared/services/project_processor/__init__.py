@@ -54,7 +54,10 @@ class ProjectProcessor:
         task.subscribe(queue)
 
         async def generator():
-            yield cls.log_to_json_str(task.logs[0])
+            try:
+                yield cls.log_to_json_str(task.logs[0])
+            except IndexError:
+                pass
             while True:
                 log = await queue.get()
                 yield cls.log_to_json_str(log)
