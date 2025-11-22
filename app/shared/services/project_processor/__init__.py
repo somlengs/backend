@@ -52,15 +52,9 @@ class ProjectProcessor:
 
         queue = asyncio.Queue[TaskLog]()
         task.subscribe(queue)
+        last_log: TaskLog | None = None
 
         async def generator():
-            try:
-                last_log = task.logs[0]
-                yield cls.log_to_json_str(last_log)
-                if last_log.stop_connections:
-                    return
-            except IndexError:
-                pass
             while True:
                 log = await queue.get()
                 yield cls.log_to_json_str(log)
@@ -83,10 +77,6 @@ class ProjectProcessor:
 
     @staticmethod
     def log_to_json_str(log: TaskLog) -> str:
-        statuses = {}
-        if log.task_statuses:
-            for uuid, s in log.task_statuses.items():
-                statuses[str(uuid)] = s
         data = {
             'project_id': str(log.project_id),
             'status': log.status,
@@ -94,7 +84,7 @@ class ProjectProcessor:
             'total_tasks': log.total_tasks,
             'message': log.message,
             'error': log.error,
-            'task_statuses':statuses
+            'task_statuses':log.task_statuses
         }
         
         str_data = json.dumps(data, ensure_ascii=False)

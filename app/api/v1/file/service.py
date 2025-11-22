@@ -57,6 +57,8 @@ async def add_file_to_project(
         with wav_file.open('rb') as f:
             await SSSRepo.instance.upload(f, file_path=supa_path)
         project.files.append(audio_file)
+        if project.status == ProcessingStatus.completed:
+            project.status = ProcessingStatus.pending
 
     return project, audio_file
 

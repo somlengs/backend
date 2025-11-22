@@ -80,6 +80,12 @@ async def add_file(
         project_id,
         user.id,
     )
+    
+    if project.status == ProcessingStatus.processing:
+        raise api.HTTPException(
+            api.status.HTTP_409_CONFLICT,
+            'Current project is processing. Please wait.'
+        )
 
     project, audio_file = await service.add_file_to_project(
         user.id,

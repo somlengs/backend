@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import sys
 
 import uvicorn
@@ -12,8 +11,7 @@ from app.core.handlers.log_handlers.telegram import TelegramLogHandler
 from app.core import logger
 from app.core.lifespan import lifespan
 from app.core.middlewares.logger import ExceptionLoggingMiddleware
-from app.entities.repositories.project.base import ProjectRepo
-from app.entities.repositories.project.supabase import SupabaseProjectRepo
+from app.shared.services.metadata_exporter import add_exporter, CSVExporter
 
 
 app = FastAPI(lifespan=lifespan)
@@ -53,6 +51,9 @@ def main():
     server = setup_server()
     app.add_middleware(ExceptionLoggingMiddleware)
     # logger.add_handler(TelegramLogHandler(level=logging.WARNING))
+
+    add_exporter('csv', 'Wav2Vec2', CSVExporter(','))
+    add_exporter('tsv', 'Wav2Vec2', CSVExporter('\t'))
 
     try:
         server.run()

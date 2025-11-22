@@ -1,6 +1,13 @@
 from dataclasses import dataclass, field
+from typing import TypedDict
 from uuid import UUID
 from app.entities.types.enums.processing_status import ProcessingStatus
+
+
+class ChangedFileStatusT(TypedDict):
+    file_id: str
+    status: ProcessingStatus
+    content: str | None
 
 
 @dataclass
@@ -11,7 +18,7 @@ class TaskLog:
     total_tasks: int
     message: str = field(default='')
     error: int | None = field(default=None)
-    task_statuses: dict[UUID, ProcessingStatus] | None = field(default=None)
+    task_statuses: list[ChangedFileStatusT] = field(default_factory=list)
     stop_connections: bool = False
 
 @dataclass

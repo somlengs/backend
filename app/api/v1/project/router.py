@@ -1,9 +1,11 @@
 import time
+from typing import Annotated, Literal
 from uuid import UUID
 
 import fastapi as api
 from sqlalchemy.orm import Session
 
+from app.shared.services.metadata_exporter import get_exporter
 from app.shared.services.project_processor import ProjectProcessor
 
 from .services import *
@@ -35,7 +37,9 @@ async def new_project(
     user: AuthUser = api.Depends(auth_user),
 ):
     logger.info('Creating new project request received')
-    logger.debug(f'user={user.id} zip_files_count={len(files)} project_name="{name}"')
+    logger.debug(
+        f'user={user.id} zip_files_count={len(files)} project_name="{name}"'
+    )
     t0 = time.perf_counter()
 
     service = NewProjectService(files, name, description, user)
@@ -56,7 +60,8 @@ async def new_project(
 
         res = project_model_to_schema(service.project)
         res.num_of_files = num_of_files
-        logger.info(f'Empty project {service.project.id} created and returned (took {(time.perf_counter() - t0):.4f}s)')
+        logger.info(
+            f'Empty project {service.project.id} created and returned (took {(time.perf_counter() - t0):.4f}s)')
 
         return res
 
@@ -70,16 +75,17 @@ async def new_project(
 async def get_all(
     page: int = api.Query(1, ge=1),
     limit: int = api.Query(20, ge=1, le=100),
-    name: str = api.Query(""),
+    name: str = api.Query(''),
     status: ProcessingStatus | None = api.Query(None),
     sort: ProjectSorting = api.Query(ProjectSorting.updated_at),
     order: Ordering = api.Query(Ordering.desc),
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ) -> Paginated[Project]:
-    logger.info("Fetch project list")
-    logger.debug(f"user={user.id} page={page} limit={limit} sort={sort} order={order} status={status}")
-
+    logger.info('Fetch project list')
+    logger.debug(
+        f'user={user.id} page={page} limit={limit} sort={sort} order={order} status={status}'
+    )
 
     result = await ProjectRepo.instance.get_all_projects_for_user(
         db,
@@ -95,10 +101,10 @@ async def get_all(
         mapper=project_model_to_schema,
     )
 
-    logger.info(f"Returned {len(result['data'])} projects")
+    logger.info(f'Returned {len(result['data'])} projects')
     return {
-        "data": result["data"],
-        "pagination": result["pagination"]
+        'data': result['data'],
+        'pagination': result['pagination']
     }
 
 
@@ -108,14 +114,16 @@ async def get_project(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    logger.info(f"Fetching project {project_id}")
+    logger.info(f'Fetching project {project_id}')
     project = await ProjectRepo.instance.get_project_by_id(db, str(project_id), user.id)
 
     if not project:
-        logger.warning(f"Project {project_id} not found for user {user.id}")
-        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
+        logger.warning(f'Project {project_id} not found for user {user.id}')
+        raise api.HTTPException(
+            api.status.HTTP_404_NOT_FOUND, 'Project not found'
+        )
 
-    logger.debug(f"Project {project_id} retrieved")
+    logger.debug(f'Project {project_id} retrieved')
     return project_model_to_schema(project)
 
 
@@ -126,18 +134,20 @@ async def patch(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    logger.info(f"Updating project {project_id}")
-    logger.debug(f"Payload: {body.model_dump()}")
+    logger.info(f'Updating project {project_id}')
+    logger.debug(f'Payload: {body.model_dump()}')
 
     project = await ProjectRepo.instance.update_project(
         db, project_id, user.id, body
     )
 
     if not project:
-        logger.warning(f"Update failed, project {project_id} not found")
-        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
+        logger.warning(f'Update failed, project {project_id} not found')
+        raise api.HTTPException(
+            api.status.HTTP_404_NOT_FOUND, 'Project not found'
+        )
 
-    logger.info(f"Project {project_id} updated")
+    logger.info(f'Project {project_id} updated')
     return project_model_to_schema(project)
 
 
@@ -147,18 +157,25 @@ async def delete(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    logger.info(f"Deleting project {project_id}")
+    logger.info(f'Deleting project {project_id}')
 
-    did_delete = await ProjectRepo.instance.delete_project(db, project_id, user.id)
-    
+    did_delete = await ProjectRepo.instance.delete_project(
+        db, 
+        project_id,
+        user.id
+    )
+
     if not did_delete:
-        logger.warning(f"Delete failed, project {project_id} not found")
-        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
+        logger.warning(f'Delete failed, project {project_id} not found')
+        raise api.HTTPException(
+            api.status.HTTP_404_NOT_FOUND, 
+            'Project not found'
+        )
 
-    logger.info(f"Project {project_id} deleted")
+    logger.info(f'Project {project_id} deleted')
     return api.responses.JSONResponse(
         status_code=api.status.HTTP_200_OK,
-        content={"detail": "Project deleted successfully"},
+        content={'detail': 'Project deleted successfully'},
     )
 
 
@@ -168,20 +185,29 @@ async def process_project(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    logger.info(f"Process trigger requested for project {project_id}")
+    logger.info(f'Process trigger requested for project {project_id}')
 
     project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
-    
+
     if project.status == ProcessingStatus.loading:
-        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is loading.')
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Project is loading.'
+        )
     if project.status != ProcessingStatus.pending:
-        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is already started.')
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Project is already started.'
+        )
+    if project.num_of_files < 1:
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Project is empty'
+        )
 
     ProjectProcessor.start(project)
-    
+
     return {
         'detail': 'Project started processing'
     }
+
 
 @router.get('/{project_id}/process')
 async def get_processing_project(
@@ -189,34 +215,55 @@ async def get_processing_project(
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ) -> api.responses.StreamingResponse:
-    logger.info(f"Process trigger requested for project {project_id}")
+    logger.info(f'Process trigger requested for project {project_id}')
 
     project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
-    
+
     if project.status == ProcessingStatus.loading:
-        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project is loading.')
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Project is loading.'
+        )
     if project.status == ProcessingStatus.pending:
-        raise api.HTTPException(api.status.HTTP_403_FORBIDDEN, 'Project has not started')
-    
-    update_stream =  ProjectProcessor.get_stream(project_id)
-    
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Project has not started'
+        )
+
+    update_stream = ProjectProcessor.get_stream(project_id)
+
     return api.responses.StreamingResponse(
         update_stream(),
-        media_type="text/event-stream"
+        media_type='text/event-stream'
     )
-    
-    
 
 
 @router.get('/{project_id}/download')
 async def download_project(
     project_id: UUID,
+    toolkit: Annotated[str, 'Values like `Wav2Vec2`, `OpenAI Whisper`'],
+    format: Annotated[str, 'Values like `csv`, `tsv` or `json`'],
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    logger.info(f"Download requested for project {project_id}")
+    logger.info(f'Download requested for project {project_id}')
 
     project = await ProjectRepo.instance.get_project_or_404(db, str(project_id), user.id)
     
-    logger.debug(f"Project {project_id} download authorized")
-    ...
+    if project.status != ProcessingStatus.completed:
+        raise api.HTTPException(
+            api.status.HTTP_403_FORBIDDEN, 'Cannot download unfinished projects'
+        )
+        
+    exporter = get_exporter(format, toolkit)
+    
+    if exporter is None:
+        raise api.HTTPException(
+            api.status.HTTP_422_UNPROCESSABLE_CONTENT, 'Invalid export format'
+        )
+    
+    buffer = await exporter.export(project)
+    
+    return api.responses.StreamingResponse(
+        buffer,
+        media_type='application/zip',
+        headers={'Content-Disposition': f'attachment; filename="{project.name}.zip"'},
+    )

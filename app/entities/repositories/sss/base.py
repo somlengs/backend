@@ -3,6 +3,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from io import BufferedReader, FileIO
 from pathlib import Path
+from typing import Any
 
 from storage3.types import UploadResponse
 
@@ -38,11 +39,17 @@ class SSSRepo(ABC):
     ) -> bytes:
         ...
 
-    @abstractmethod
     async def delete(
         self,
         file_path: str,
-    ) -> bytes:
+    ) -> None:
+        return await self.bulk_delete([file_path])
+
+    @abstractmethod
+    async def bulk_delete(
+        self,
+        file_paths: list[str],
+    ) -> None:
         ...
 
     @abstractmethod

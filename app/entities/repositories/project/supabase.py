@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import Config
 from app.entities.models.project import ProjectTable
+from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.params.listing.project import ProjectListingParams
 from app.entities.schemas.requests.project import UpdateProjectSchema
 from app.entities.types.enums.processing_status import ProcessingStatus
@@ -152,9 +153,16 @@ class SupabaseProjectRepo(ProjectRepo):
         user_id: UUID | str,
     ) -> bool:
         project = await self.get_project_by_id(db, project_id, user_id)
-        
+
         if project is None:
             return False
+        files_to_delete: list[str] = []
+        for file in project.files:
+            files_to_delete.append(file.file_path_raw)
+            if file.file_path_cleaned:
+                files_to_delete.append(file.file_path_cleaned)
+
+        await SSSRepo.instance.bulk_delete(files_to_delete)
 
         db.delete(project)
         db.commit()

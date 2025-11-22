@@ -24,6 +24,8 @@ class Config:
     CORS_ORIGINS = parse_list(require_env('CORS_ORIGINS'))
     ASR_URL = require_env('ASR_SERVICE_URL')
     CHAR_ENCODING = optional_env('CHAR_ENCODING', 'utf-8')
+    MAX_TASKS_PER_PROJECT = optional_env('MAX_TASKS_PER_PROJECT', default=4)
+    ASR_TIMEOUT = optional_env('ASR_TIMEOUT', default=120.0)
 
     PEM_KEY: bytes
     JWT_SECRET=require_env('JWT_SECRET')

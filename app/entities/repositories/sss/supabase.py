@@ -1,6 +1,6 @@
 from __future__ import annotations
 import asyncio
-from io import BufferedReader, BytesIO, FileIO
+from io import BufferedReader, FileIO
 from pathlib import Path
 from typing import override
 
@@ -8,7 +8,6 @@ from supabase import Client, create_client
 from storage3.types import UploadResponse
 
 from app.core.config import Config
-from app.entities.types.pagination import Paginated
 from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
@@ -55,11 +54,13 @@ class SupabaseSSSRepo(SSSRepo):
         ...
 
     @override
-    async def delete(
+    async def bulk_delete(
         self,
-        file_path: str,
-    ) -> bytes:
-        ...
+        file_paths: list[str],
+    ) -> None:
+        if len(file_paths) <= 0:
+            return
+        self.bucket.remove(file_paths)
 
     @override
     async def exists(
