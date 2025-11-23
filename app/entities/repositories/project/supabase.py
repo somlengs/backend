@@ -20,7 +20,13 @@ from .base import ProjectRepo
 
 class SupabaseProjectRepo(ProjectRepo):
     def __init__(self) -> None:
-        self.engine = create_engine(Config.Supabase.DATABASE_URL)
+        self.engine = create_engine(
+            Config.Supabase.DATABASE_URL,
+            pool_pre_ping=True,
+            pool_size=20,
+            max_overflow=10,
+            pool_recycle=3608,
+        )
         self.SessionLocal = sessionmaker(
             bind=self.engine, autoflush=False, autocommit=False, expire_on_commit=False
         )
