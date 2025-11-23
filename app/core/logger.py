@@ -1,6 +1,5 @@
 import logging
-from logging import Handler
-from logging import Logger
+from logging import Handler, Logger
 
 
 def get() -> Logger:

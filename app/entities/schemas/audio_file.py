@@ -20,3 +20,4 @@ class AudioFile(BaseModel):
     error_message: str | None
     created_at: datetime
     updated_at: datetime
+    public_url: str | None = None

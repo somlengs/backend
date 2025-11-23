@@ -1,6 +1,7 @@
 from dataclasses import dataclass, field
 from typing import TypedDict
 from uuid import UUID
+
 from app.entities.types.enums.processing_status import ProcessingStatus
 
 

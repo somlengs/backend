@@ -6,13 +6,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.v1 import load_routers
+from app.core import logger
 from app.core.config import Config
 from app.core.handlers.log_handlers.telegram import TelegramLogHandler
-from app.core import logger
 from app.core.lifespan import lifespan
 from app.core.middlewares.logger import ExceptionLoggingMiddleware
-from app.shared.services.metadata_exporter import add_exporter, CSVExporter
-
+from app.shared.services.metadata_exporter import CSVExporter, add_exporter
 
 app = FastAPI(lifespan=lifespan)
 

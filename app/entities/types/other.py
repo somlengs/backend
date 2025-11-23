@@ -1,6 +1,5 @@
 from typing import Literal
 
-import logging
 
 type LogLevelT = int | Literal[
     'CRITICAL',

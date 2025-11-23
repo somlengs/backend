@@ -8,10 +8,13 @@ from supabase import Client, create_client
 from storage3.types import UploadResponse
 
 from app.core.config import Config
+from app.core.logger import get
 from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
 from .base import SSSRepo
+
+logger = get()
 
 
 class SupabaseSSSRepo(SSSRepo):
@@ -60,7 +63,8 @@ class SupabaseSSSRepo(SSSRepo):
     ) -> None:
         if len(file_paths) <= 0:
             return
-        self.bucket.remove(file_paths)
+        deleted = self.bucket.remove(file_paths)
+        logger.debug(f"Deleted files: {deleted}")
 
     @override
     async def exists(
@@ -68,3 +72,10 @@ class SupabaseSSSRepo(SSSRepo):
         file_path: str,
     ) -> bool:
         return self.bucket.exists(file_path)
+
+    @override
+    async def get_public_url(
+        self,
+        file_path: str,
+    ) -> str:
+        return self.bucket.get_public_url(file_path)

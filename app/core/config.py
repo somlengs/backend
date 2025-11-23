@@ -1,7 +1,5 @@
 import logging
 import os
-import json
-from pathlib import Path
 from typing import Literal, cast
 
 from dotenv import load_dotenv

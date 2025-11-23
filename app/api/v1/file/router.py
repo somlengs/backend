@@ -11,6 +11,7 @@ from app.entities.dto.responses.audio_file import audio_file_model_to_schema
 from app.entities.dto.responses.project import project_model_to_schema
 from app.entities.repositories.file.base import AudioFileRepo
 from app.entities.repositories.project.base import ProjectRepo
+from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.audio_file import AudioFile
 from app.entities.schemas.auth_user import AuthUser
 from app.entities.schemas.params.listing.audio_file import AudioFileListingParams
@@ -19,19 +20,17 @@ from app.entities.types.enums.ordering import Ordering
 from app.entities.types.enums.processing_status import ProcessingStatus
 from app.entities.types.enums.sorting import AudioFileSorting
 from app.entities.types.pagination import Paginated
-from app.shared.utils.other import paginate
 
-
-router = api.APIRouter(prefix='/project')
+router = api.APIRouter(prefix="/project")
 logger = get()
 
 
-@router.get('/{project_id}/files')
+@router.get("/{project_id}/files")
 async def get_files(
     project_id: UUID,
     page: int = api.Query(1, ge=1),
     limit: int = api.Query(50, ge=1),
-    name: str = api.Query(''),
+    name: str = api.Query(""),
     status: ProcessingStatus | None = api.Query(None),
     sort: AudioFileSorting = api.Query(AudioFileSorting.updated_at),
     order: Ordering = api.Query(Ordering.desc),
@@ -47,7 +46,7 @@ async def get_files(
     if project.status == ProcessingStatus.loading:
         raise api.HTTPException(
             api.status.HTTP_409_CONFLICT,
-            'Current project is loading. Please wait.'
+            "Current project is loading. Please wait."
         )
 
     files = await AudioFileRepo.instance.get_files_for_project(
@@ -64,11 +63,14 @@ async def get_files(
         ),
         mapper=audio_file_model_to_schema,
     )
+    
+    for file in files['data']:
+        file.public_url = await SSSRepo.instance.get_public_url(file.file_path_raw)
 
     return files
 
 
-@router.post('/{project_id}/files')
+@router.post("/{project_id}/files")
 async def add_file(
     project_id: UUID,
     file: api.UploadFile = api.File(...),
@@ -80,11 +82,10 @@ async def add_file(
         project_id,
         user.id,
     )
-    
+
     if project.status == ProcessingStatus.processing:
         raise api.HTTPException(
-            api.status.HTTP_409_CONFLICT,
-            'Current project is processing. Please wait.'
+            api.status.HTTP_409_CONFLICT, "Current project is processing. Please wait."
         )
 
     project, audio_file = await service.add_file_to_project(
@@ -100,54 +101,43 @@ async def add_file(
     )
 
     return {
-        'project': project_model_to_schema(project),
-        'file': audio_file_model_to_schema(audio_file)
+        "project": project_model_to_schema(project),
+        "file": audio_file_model_to_schema(audio_file),
     }
 
 
-
-@router.patch('/{project_id}/files/{file_id}')
+@router.patch("/{project_id}/files/{file_id}")
 async def patch_file(
     project_id: UUID,
     file_id: UUID,
     body: UpdateAudioFileSchema,
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
-): 
+):
     logger.info(f"Updating file {file_id} for project {project_id}")
     logger.debug(f"Payload: {body.model_dump()}")
-    
-    file = await AudioFileRepo.instance.update_file(
-        db,
-        file_id,
-        user.id,
-        body
-    )
-    
+
+    file = await AudioFileRepo.instance.update_file(db, file_id, user.id, body)
+
     if not file:
         logger.warning(f"Update failed, project {file_id} not found")
         raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "File not found")
-    
+
     return audio_file_model_to_schema(file)
 
 
-@router.delete('/{project_id}/files/{file_id}')
+@router.delete("/{project_id}/files/{file_id}")
 async def delete_file(
     project_id: UUID,
     file_id: UUID,
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
 ):
-    did_delete = await AudioFileRepo.instance.delete_file(
-        db,
-        file_id,
-        user.id
-    )
+    did_delete = await AudioFileRepo.instance.delete_file(db, file_id, user.id)
 
     if not did_delete:
         logger.warning(f"Delete failed, project {project_id} not found")
-        raise api.HTTPException(
-            api.status.HTTP_404_NOT_FOUND, "Project not found")
+        raise api.HTTPException(api.status.HTTP_404_NOT_FOUND, "Project not found")
 
     return api.responses.JSONResponse(
         status_code=api.status.HTTP_200_OK,

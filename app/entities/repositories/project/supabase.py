@@ -12,14 +12,13 @@ from app.entities.models.project import ProjectTable
 from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.params.listing.project import ProjectListingParams
 from app.entities.schemas.requests.project import UpdateProjectSchema
-from app.entities.types.enums.processing_status import ProcessingStatus
 from app.entities.types.pagination import Paginated
 from app.shared.utils.query import paginate_query
+
 from .base import ProjectRepo
 
 
 class SupabaseProjectRepo(ProjectRepo):
-
     def __init__(self) -> None:
         self.engine = create_engine(Config.Supabase.DATABASE_URL)
         self.SessionLocal = sessionmaker(
@@ -48,12 +47,11 @@ class SupabaseProjectRepo(ProjectRepo):
         sort = params.sort
         order = params.order
 
-        query = db.query(ProjectTable).filter(
-            ProjectTable.created_by == user_id
-        )
+        query = db.query(ProjectTable).filter(ProjectTable.created_by == user_id)
         if len(name) > 2:
-            query = query.filter(func.lower(
-                ProjectTable.name).like(f"%{name.lower()}%"))
+            query = query.filter(
+                func.lower(ProjectTable.name).like(f"%{name.lower()}%")
+            )
 
         if status is not None:
             query = query.filter(ProjectTable.status == status)
@@ -130,7 +128,7 @@ class SupabaseProjectRepo(ProjectRepo):
             if exists_only:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
-                    'Project not found',
+                    "Project not found",
                 )
             db.add(project)
             db.commit()

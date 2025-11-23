@@ -2,17 +2,17 @@ from enum import StrEnum
 
 from sqlalchemy import Column
 
-from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
+from app.entities.models.project import ProjectTable
 
 
 class ProjectSorting(StrEnum):
-    project_name = 'project_name'
-    status = 'status'
-    progress = 'progress'
-    created_at = 'created_at'
-    updated_at = 'updated_at'
-    
+    project_name = "project_name"
+    status = "status"
+    progress = "progress"
+    created_at = "created_at"
+    updated_at = "updated_at"
+
     def column(self) -> Column[ProjectTable]:
         mapping = {
             ProjectSorting.project_name: ProjectTable.name,
@@ -25,13 +25,13 @@ class ProjectSorting(StrEnum):
 
 
 class AudioFileSorting(StrEnum):
-    file_name = 'file_name'
-    status = 'status'
-    created_at = 'created_at'
-    updated_at = 'updated_at'
-    file_size = 'file_size'
-    duration = 'duration'
-    file_format = 'file_format'
+    file_name = "file_name"
+    status = "status"
+    created_at = "created_at"
+    updated_at = "updated_at"
+    file_size = "file_size"
+    duration = "duration"
+    file_format = "file_format"
 
     def column(self) -> Column[AudioFileTable]:
         mapping = {

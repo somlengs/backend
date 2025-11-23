@@ -58,3 +58,10 @@ class SSSRepo(ABC):
         file_path: str,
     ) -> bool:
         ...
+
+    @abstractmethod
+    async def get_public_url(
+        self,
+        file_path: str,
+    ) -> str:
+        ...

@@ -1,5 +1,5 @@
 import time
-from typing import Annotated, Literal
+from typing import Annotated
 from uuid import UUID
 
 import fastapi as api
@@ -8,11 +8,10 @@ from sqlalchemy.orm import Session
 from app.shared.services.metadata_exporter import get_exporter
 from app.shared.services.project_processor import ProjectProcessor
 
-from .services import *
+from .services import NewProjectService
 from app.core.deps.auth import auth_user
 from app.core.deps.db import get_db
 from app.core.logger import get
-from app.entities import models
 from app.entities.dto.responses.project import project_model_to_schema
 from app.entities.schemas.auth_user import AuthUser
 from app.entities.schemas.params.listing.project import ProjectListingParams

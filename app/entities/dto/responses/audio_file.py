@@ -1,4 +1,5 @@
 from app.entities.models.audio_file import AudioFileTable
+from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.audio_file import AudioFile
 
 
