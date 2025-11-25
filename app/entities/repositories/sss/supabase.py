@@ -63,8 +63,7 @@ class SupabaseSSSRepo(SSSRepo):
     ) -> None:
         if len(file_paths) <= 0:
             return
-        deleted = self.bucket.remove(file_paths)
-        logger.debug(f"Deleted files: {deleted}")
+        self.bucket.remove(file_paths)
 
     @override
     async def exists(
@@ -74,7 +73,7 @@ class SupabaseSSSRepo(SSSRepo):
         return self.bucket.exists(file_path)
 
     @override
-    async def get_public_url(
+    def get_public_url(
         self,
         file_path: str,
     ) -> str:

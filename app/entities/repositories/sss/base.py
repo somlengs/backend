@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from io import BufferedReader, FileIO
 from pathlib import Path
-from typing import Any
 
 from storage3.types import UploadResponse
 
@@ -60,7 +59,7 @@ class SSSRepo(ABC):
         ...
 
     @abstractmethod
-    async def get_public_url(
+    def get_public_url(
         self,
         file_path: str,
     ) -> str:

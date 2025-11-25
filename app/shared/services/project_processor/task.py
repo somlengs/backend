@@ -1,19 +1,22 @@
 from __future__ import annotations
 
 import asyncio
-from collections.abc import Coroutine
-from typing import Any, TYPE_CHECKING
-from contextlib import suppress
 import time
+from collections.abc import Coroutine
+from contextlib import suppress
+from typing import TYPE_CHECKING, Any
 from uuid import UUID
 
 from app.core.config import Config
 from app.core.logger import get
 from app.entities.models.project import ProjectTable
 from app.entities.repositories.project.base import ProjectRepo
-from app.shared.services.project_processor.sub_task import SubTask
+from app.entities.schemas.events.project_event import ProjectEvent
+from app.entities.types.enums.event_type import EventType
 from app.entities.types.enums.processing_status import ProcessingStatus
 from app.entities.types.task_log import ChangedFileStatusT, SubTaskLog, TaskLog
+from app.shared.services.event_manager import EventManager
+from app.shared.services.project_processor.sub_task import SubTask
 
 if TYPE_CHECKING:
     from . import ProjectProcessor
@@ -30,7 +33,7 @@ class ProcessingTask:
 
     _listeners: list[asyncio.Queue[TaskLog]]
     _manager: type[ProjectProcessor]
-    
+
     @property
     def id(self) -> UUID:
         return self.project.id
@@ -48,18 +51,16 @@ class ProcessingTask:
     def unsubscribe(self, queue: asyncio.Queue[TaskLog]) -> None:
         with suppress(ValueError):
             self._listeners.remove(queue)
-            
+
     _is_waiting: bool = False
-    
+
     async def update_sub_task(self, st: SubTask) -> None:
-        self.changes.append({
-            'file_id': str(st.id),
-            'content': st._content,
-            'status': st._status
-        })
+        self.changes.append(
+            {"file_id": str(st.id), "content": st._content, "status": st._status}
+        )
         if self._is_waiting:
             return
-        await self._notify_listeners('update')
+        await self._notify_listeners("update")
 
     async def _notify_listeners(
         self,
@@ -72,7 +73,7 @@ class ProcessingTask:
         updates = self.changes.copy()
         self.changes.clear()
         queues = self._listeners.copy()
-        
+
         tasks_len = len(self.sub_tasks)
         completed_len = 0
         # task_statuses = {}
@@ -86,7 +87,7 @@ class ProcessingTask:
             status=self.project.status,
             completed_tasks=completed_len,
             total_tasks=tasks_len,
-            message=message or '',
+            message=message or "",
             error=None,
             task_statuses=updates,
             stop_connections=stop_connections,
@@ -103,27 +104,38 @@ class ProcessingTask:
     async def _run_task(self, task: SubTask) -> SubTask:
         t0 = time.perf_counter()
         await task.start()
-        logger.debug(f'Transcription for file {task.id} finished (took {(time.perf_counter() - t0):.4f}s)')
+        logger.debug(
+            f"Transcription for file {task.id} finished (took {(time.perf_counter() - t0):.4f}s)"
+        )
         return task
 
     async def start(self) -> None:
         db = ProjectRepo.instance.get_session()()
-        project = await ProjectRepo.instance.get_project_or_404(db, self.project.id, self.project.created_by)
+        project = await ProjectRepo.instance.get_project_or_404(
+            db, self.project.id, self.project.created_by
+        )
         if project.status != ProcessingStatus.pending:
             msg = (
-                f'Cannot start non-pending project {project.id}. '
-                f'(current {project.status})'
+                f"Cannot start non-pending project {project.id}. "
+                f"(current {project.status})"
             )
             raise RuntimeError(msg)
 
         t0 = time.perf_counter()
-        logger.info(f'Processing started for project {self.project.id}')
-        await self._notify_listeners('Started')
+        logger.info(f"Processing started for project {self.project.id}")
+        await self._notify_listeners("Started")
 
         files = project.files
-        
+
         self.project.status = ProcessingStatus.processing
-        await ProjectRepo.instance.replace_project(db, self.project, self.project.created_by)
+        await ProjectRepo.instance.replace_project(
+            db, self.project, self.project.created_by
+        )
+        EventManager.notify(
+            ProjectEvent.from_table(
+                self.project, str(self.project.created_by), EventType.project_updated
+            )
+        )
 
         for file in files:
             t = SubTask(db, file)
@@ -147,11 +159,18 @@ class ProcessingTask:
         for r in results:
             r.commit()
 
-        await ProjectRepo.instance.replace_project(db, self.project, self.project.created_by)
+        await ProjectRepo.instance.replace_project(
+            db, self.project, self.project.created_by
+        )
 
         self._manager.on_task_complete(self.id)
-        await self._notify_listeners('Finished', stop_connections=True)
+        await self._notify_listeners("Finished", stop_connections=True)
         logger.info(
-            f'Transcription finished for project {self.id} '
-            f'(took {(time.perf_counter() - t0):.4f}s)'
+            f"Transcription finished for project {self.id} "
+            f"(took {(time.perf_counter() - t0):.4f}s)"
+        )
+        EventManager.notify(
+            ProjectEvent.from_table(
+                self.project, str(self.project.created_by), EventType.project_updated
+            )
         )

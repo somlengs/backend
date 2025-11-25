@@ -7,17 +7,24 @@ from typing import cast
 from zipfile import ZipFile
 
 from fastapi import HTTPException, UploadFile, status
+import httpx
 from pydub import AudioSegment
 from sqlalchemy.orm import Session
+from sqlalchemy.sql.sqltypes import exc
 
 from app.core.config import Config
 from app.core.logger import get as get_logger
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.project import ProjectTable
+from app.entities.repositories.file.base import AudioFileRepo
 from app.entities.repositories.project.base import ProjectRepo
 from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.auth_user import AuthUser
+from app.entities.schemas.events.audio_file_event import AudioFileEvent
+from app.entities.schemas.events.project_event import ProjectEvent
+from app.entities.types.enums.event_type import EventType
 from app.entities.types.enums.processing_status import ProcessingStatus
+from app.shared.services.event_manager import EventManager
 from app.shared.utils.other import convert_to_wav
 
 logger = get_logger()
@@ -69,7 +76,7 @@ class NewProjectService:
                     status.HTTP_422_UNPROCESSABLE_CONTENT,
                     'Invalid zip file'
                 )
-        logger.debug(f'File validation passed')
+        logger.debug('File validation passed')
 
     def close(self) -> None:
         logger.debug('Closing DB session and cleaning temp folder')
@@ -122,15 +129,16 @@ class NewProjectService:
 
                 for file in audio_files:
                     try:
-                        c0 = time.perf_counter()
                         source = tmp_path / file
                         logger.debug(f'Converting to wav: {source.name}')
                         wav_file = await convert_to_wav(source)
                         self.files_to_process.append(wav_file)
                     except Exception:
                         logger.error(f'Failed to convert {file}', exc_info=True)
+                self.project.initial_num_of_files = len(audio_files)
 
         logger.info(f'Extraction completed: {len(self.files_to_process)} files ready ({(time.perf_counter() - t0):.4f}s)')
+        EventManager.notify(ProjectEvent.from_table(self.project, str(self.user.id), EventType.project_created))
 
     async def upload_files(self) -> None:
         t0 = time.perf_counter()
@@ -142,10 +150,15 @@ class NewProjectService:
                 logger.debug(f'[{idx}/{len(self.files_to_process)}] Processing {file.name}')
 
                 supa_path = f'{self.id}/raw/{file.name}'
-
-                with file.open('rb') as f:
-                    logger.debug(f'Uploading raw file -> {supa_path}')
-                    await SSSRepo.instance.upload(f, file_path=supa_path)
+                
+                try:
+                    with file.open('rb') as f:
+                        logger.debug(f'Uploading raw file -> {supa_path}')
+                        await SSSRepo.instance.upload(f, file_path=supa_path)
+                except httpx.ReadTimeout:
+                    logger.warning(f'Failed to upload {file.name} to supabase. Skipped')
+                    self.project.initial_num_of_files = self.project.initial_num_of_files - 1
+                    continue
 
                 audio_segment = AudioSegment.from_file(str(file))
                 duration_ms = len(audio_segment)
@@ -167,12 +180,15 @@ class NewProjectService:
 
                 self.processed_files.append(audio)
                 logger.debug(f'Indexed {file.name} ({duration_ms}ms, id={audio_id}) in {(time.perf_counter() - f0):.4f}s')
+                EventManager.notify(AudioFileEvent.from_table(audio, str(self.id) + str(self.project.id), EventType.file_created, SSSRepo.instance.get_public_url(supa_path)))
+                await AudioFileRepo.instance.add_file(self.db, audio)
 
             self.project.files = self.processed_files
             self.project.status = ProcessingStatus.pending
 
             logger.info('Persisting processed file metadata to DB')
             await ProjectRepo.instance.replace_project(self.db, self.project, self.user.id)
+            EventManager.notify(ProjectEvent.from_table(self.project, self.user.id, EventType.project_updated))
 
             logger.info(
                 f'Processed {len(self.processed_files)} files for project {self.id} ({(time.perf_counter() - t0):.4f}s)'

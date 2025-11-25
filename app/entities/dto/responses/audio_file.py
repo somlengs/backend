@@ -3,7 +3,7 @@ from app.entities.repositories.sss.base import SSSRepo
 from app.entities.schemas.audio_file import AudioFile
 
 
-def audio_file_model_to_schema(file: AudioFileTable) -> AudioFile:
+def audio_file_model_to_schema(file: AudioFileTable, public_url: str | None) -> AudioFile:
     return AudioFile(
         id=file.id,
         project_id=file.project_id,
@@ -18,4 +18,5 @@ def audio_file_model_to_schema(file: AudioFileTable) -> AudioFile:
         error_message=file.error_message,
         created_at=file.created_at,
         updated_at=file.updated_at,
+        public_url=public_url
     )

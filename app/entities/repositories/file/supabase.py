@@ -13,16 +13,15 @@ from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.project import ProjectTable
 from app.entities.schemas.params.listing.audio_file import AudioFileListingParams
 from app.entities.schemas.requests.audio_file import UpdateAudioFileSchema
-from app.entities.types.enums.processing_status import ProcessingStatus
 from app.entities.types.pagination import Paginated
 from app.shared.utils.query import paginate_query
+
 from .base import AudioFileRepo
 
 logger = get()
 
 
 class SupabaseAudioFileRepo(AudioFileRepo):
-
     def __init__(self) -> None:
         self.engine = create_engine(Config.Supabase.DATABASE_URL)
         self.SessionLocal = sessionmaker(
@@ -55,7 +54,7 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         if project is None:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
-                'Project not found',
+                "Project not found",
             )
 
         name: str = params.file_name
@@ -65,18 +64,15 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         sort = params.sort
         order = params.order
 
-        query = (
-            db.query(AudioFileTable)
-            .filter(AudioFileTable.project_id == project_id)
-        )
+        query = db.query(AudioFileTable).filter(AudioFileTable.project_id == project_id)
 
         if len(name) > 2:
-            query = query.filter(func.lower(
-                AudioFileTable.file_name).like(f"%{name.lower()}%"))
+            query = query.filter(
+                func.lower(AudioFileTable.file_name).like(f"%{name.lower()}%")
+            )
 
         if f_status is not None:
-            query = query.filter(
-                AudioFileTable.transcription_status == f_status)
+            query = query.filter(AudioFileTable.transcription_status == f_status)
 
         sort_col = sort.column()
         query = order.apply(query, sort_col)
@@ -112,18 +108,16 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         if file is None:
             raise HTTPException(
                 status.HTTP_404_NOT_FOUND,
-                'File not found',
+                "File not found",
             )
 
         return file
 
     @override
-    async def create_file(self, db: Session, project_id: UUID | str, user_id: UUID | str, **kwargs) -> AudioFileTable:
-        file = AudioFileTable(
-            project_id=project_id,
-            created_by=user_id,
-            **kwargs
-        )
+    async def create_file(
+        self, db: Session, project_id: UUID | str, user_id: UUID | str, **kwargs
+    ) -> AudioFileTable:
+        file = AudioFileTable(project_id=project_id, created_by=user_id, **kwargs)
         db.add(file)
         db.commit()
         db.refresh(file)
@@ -146,6 +140,15 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         file = await self.get_file_or_404(db, file_id, user_id)
 
         data.update(file)
+
+        name_query = (
+            db.query(AudioFileTable)
+            .filter(AudioFileTable.project_id == file.project_id)
+            .filter(AudioFileTable.id != file.id)
+            .where(AudioFileTable.file_name == file.file_name)
+        )
+        if name_query.first():
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Name already exists")
         db.commit()
         db.refresh(file)
         return file
@@ -164,9 +167,9 @@ class SupabaseAudioFileRepo(AudioFileRepo):
             if exists_only:
                 raise HTTPException(
                     status.HTTP_404_NOT_FOUND,
-                    'File not found',
+                    "File not found",
                 )
-
+            file.updated_at = datetime.now(UTC)
             db.add(file)
             db.commit()
             db.refresh(file)
@@ -187,11 +190,11 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         user_id: UUID | str,
     ) -> bool:
         file = await self.get_file_by_id(db, file_id, user_id)
-        
+
         if file is None:
             return False
 
         db.delete(file)
         db.commit()
-        logger.info(f'Deleted file {file.id} from project {file.project_id}')
+        logger.info(f"Deleted file {file.id} from project {file.project_id}")
         return True
