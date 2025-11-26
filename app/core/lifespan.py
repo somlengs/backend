@@ -20,7 +20,7 @@ async def lifespan(app: FastAPI):
     logger = get()
     ProjectRepo.init(SupabaseProjectRepo())
     AudioFileRepo.init(SupabaseAudioFileRepo())
-    SSSRepo.init(SupabaseSSSRepo())
+    SSSRepo.init(SupabaseSSSRepo)
     STTRepo.init(ExternalSTTRepo())
     yield
     logger.warning('Server shut down')

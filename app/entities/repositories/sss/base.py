@@ -9,11 +9,15 @@ from storage3.types import UploadResponse
 
 class SSSRepo(ABC):
 
-    instance: SSSRepo
+    instance_maker: type[SSSRepo]
 
     @classmethod
-    def init(cls, repo: SSSRepo) -> None:
-        cls.instance = repo
+    def init[T: SSSRepo](cls, instance_maker: type[T]) -> None:
+        cls.instance_maker = instance_maker
+        
+    @classmethod
+    def create_instance(cls):
+        return cls.instance_maker()
 
     @abstractmethod
     async def upload(

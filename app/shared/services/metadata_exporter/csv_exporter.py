@@ -37,7 +37,7 @@ class CSVExporter:
 
         with ZipFile(buffer, 'w', ZIP_DEFLATED) as zf:
             for file in files:
-                data = await SSSRepo.instance.download(file.file_path_raw)
+                data = await SSSRepo.create_instance().download(file.file_path_raw)
                 zf.writestr(f'files/{file.file_name}', data)
                 
             zf.writestr(f'metadata{self.ext}', metadata)

@@ -55,7 +55,7 @@ async def add_file_to_project(
             updated_at=now,
         )
         with wav_file.open('rb') as f:
-            await SSSRepo.instance.upload(f, file_path=supa_path)
+            await SSSRepo.create_instance().upload(f, file_path=supa_path)
         project.files.append(audio_file)
         if project.status == ProcessingStatus.completed:
             project.status = ProcessingStatus.pending
@@ -68,13 +68,13 @@ async def generate_file_name(
     name_with_ext: str,
 ) -> str:
     path_raw = f'{project_id}/raw/{name_with_ext}'
-    if not await SSSRepo.instance.exists(path_raw):
+    if not await SSSRepo.create_instance().exists(path_raw):
         return name_with_ext
     i = 1
     *names, ext = name_with_ext.split('.')
     while True:
         name = bump_name(names[-1], i)
         path_raw = f'{project_id}/raw/{name}.{ext}'
-        if not await SSSRepo.instance.exists(path_raw):
+        if not await SSSRepo.create_instance().exists(path_raw):
             return f'{name}.{ext}'
         i += 1

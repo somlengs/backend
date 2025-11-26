@@ -81,7 +81,7 @@ class SubTask:
                 self.file,
                 str(self.file.project_id),
                 EventType.file_updated,
-                SSSRepo.instance.get_public_url(self.file.file_path_raw),
+                SSSRepo.create_instance().get_public_url(self.file.file_path_raw),
             )
         )
         self.db.merge(self.file)

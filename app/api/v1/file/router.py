@@ -54,10 +54,10 @@ async def files_events(
 async def get_files(
     project_id: UUID,
     page: int = api.Query(1, ge=1),
-    limit: int = api.Query(50, ge=1),
+    limit: int = api.Query(20, ge=1),
     name: str = api.Query(""),
     status: ProcessingStatus | None = api.Query(None),
-    sort: AudioFileSorting = api.Query(AudioFileSorting.updated_at),
+    sort: AudioFileSorting = api.Query(AudioFileSorting.file_name),
     order: Ordering = api.Query(Ordering.desc),
     user: AuthUser = api.Depends(auth_user),
     db: Session = api.Depends(get_db),
@@ -90,7 +90,7 @@ async def get_files(
     )
 
     for file in files["data"]:
-        file.public_url = SSSRepo.instance.get_public_url(file.file_path_raw)
+        file.public_url = SSSRepo.create_instance().get_public_url(file.file_path_raw)
 
     return files
 
@@ -125,7 +125,7 @@ async def add_file(
         user.id,
     )
 
-    public_url = SSSRepo.instance.get_public_url(audio_file.file_path_raw)
+    public_url = SSSRepo.create_instance().get_public_url(audio_file.file_path_raw)
     EventManager.notify(
         AudioFileEvent.from_table(
             audio_file,
@@ -158,7 +158,7 @@ async def patch_file(
         logger.warning(f"Update failed, project {file_id} not found")
         raise api.HTTPException(api.status.HTTP_400_BAD_REQUEST, "File not found")
 
-    public_url = SSSRepo.instance.get_public_url(file.file_path_raw)
+    public_url = SSSRepo.create_instance().get_public_url(file.file_path_raw)
     EventManager.notify(
         AudioFileEvent.from_table(
             file,

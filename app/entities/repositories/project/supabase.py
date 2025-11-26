@@ -166,7 +166,7 @@ class SupabaseProjectRepo(ProjectRepo):
             if file.file_path_cleaned:
                 files_to_delete.append(file.file_path_cleaned)
 
-        await SSSRepo.instance.bulk_delete(files_to_delete)
+        await SSSRepo.create_instance().bulk_delete(files_to_delete)
 
         db.delete(project)
         db.commit()

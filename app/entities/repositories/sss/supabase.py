@@ -1,32 +1,30 @@
 from __future__ import annotations
+
 import asyncio
 from io import BufferedReader, FileIO
 from pathlib import Path
 from typing import override
 
-from supabase import Client, create_client
 from storage3.types import UploadResponse
+from supabase import Client, create_client
 
 from app.core.config import Config
 from app.core.logger import get
-from app.entities.models.project import ProjectTable
 from app.entities.models.audio_file import AudioFileTable
 from app.entities.models.auth_user import AuthUserTable
+from app.entities.models.project import ProjectTable
+
 from .base import SSSRepo
 
 logger = get()
 
 
 class SupabaseSSSRepo(SSSRepo):
-
     def __init__(self) -> None:
         self.client: Client = create_client(
-            Config.Supabase.URL,
-            Config.Supabase.SERVICE_ROLE
+            Config.Supabase.URL, Config.Supabase.SERVICE_ROLE
         )
-        self.bucket = self.client.storage.from_(
-            Config.Supabase.STORAGE_BUCKET_NAME
-        )
+        self.bucket = self.client.storage.from_(Config.Supabase.STORAGE_BUCKET_NAME)
 
     @override
     async def upload(
@@ -37,8 +35,9 @@ class SupabaseSSSRepo(SSSRepo):
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
             None,
-            lambda: self.bucket.upload(file_path, data, file_options={
-                                       'content-type': 'audio/wav'})
+            lambda: self.bucket.upload(
+                file_path, data, file_options={"content-type": "audio/wav"}
+            ),
         )
 
     @override
@@ -53,8 +52,7 @@ class SupabaseSSSRepo(SSSRepo):
         self,
         file_path: str,
         dest_path: str,
-    ) -> bytes:
-        ...
+    ) -> bytes: ...
 
     @override
     async def bulk_delete(

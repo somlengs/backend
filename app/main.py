@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import sys
 
 import uvicorn
@@ -49,7 +50,7 @@ def setup_server() -> uvicorn.Server:
 def main():
     server = setup_server()
     app.add_middleware(ExceptionLoggingMiddleware)
-    # logger.add_handler(TelegramLogHandler(level=logging.WARNING))
+    logger.add_handler(TelegramLogHandler(level=logging.WARNING))
 
     add_exporter('csv', 'Wav2Vec2', CSVExporter(','))
     add_exporter('tsv', 'Wav2Vec2', CSVExporter('\t'))
