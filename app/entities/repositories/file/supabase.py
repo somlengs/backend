@@ -198,3 +198,19 @@ class SupabaseAudioFileRepo(AudioFileRepo):
         db.commit()
         logger.info(f"Deleted file {file.id} from project {file.project_id}")
         return True
+
+    @override
+    async def get_completed_files(
+        self,
+        db: Session,
+        project_id: UUID | str,
+    ) -> list[AudioFileTable]:
+        from app.entities.types.enums.processing_status import ProcessingStatus
+        
+        files = (
+            db.query(AudioFileTable)
+            .filter(AudioFileTable.project_id == project_id)
+            .filter(AudioFileTable.transcription_status == ProcessingStatus.completed)
+            .all()
+        )
+        return files

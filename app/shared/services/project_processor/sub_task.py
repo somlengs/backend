@@ -76,14 +76,18 @@ class SubTask:
     def commit(self) -> None:
         self.file.transcription_status = self._status
         self.file.transcription_content = self._content
-        EventManager.notify(
-            AudioFileEvent.from_table(
-                self.file,
-                str(self.file.project_id),
-                EventType.file_updated,
-                SSSRepo.create_instance().get_public_url(self.file.file_path_raw),
-            )
+        
+        # Construct eid as user_id + project_id to match SSE filter
+        eid = str(self.file.created_by) + str(self.file.project_id)
+        
+        event = AudioFileEvent.from_table(
+            self.file,
+            eid,
+            EventType.file_updated,
+            SSSRepo.create_instance().get_public_url(self.file.file_path_raw),
         )
+        self.logger.info(f"Emitting file_updated event for file {self.file.id}, status={self._status}, eid={eid}")
+        EventManager.notify(event)
         self.db.merge(self.file)
 
     async def start(self) -> None:
@@ -91,6 +95,10 @@ class SubTask:
             raise RuntimeError(f"Cannot process already started file {self.id}")
 
         self._status = ProcessingStatus.processing
+        
+        # Emit event immediately so UI shows "processing" status
+        self.commit()
+        
         await self._log(f"File {self.file.file_name} started")
 
         self.result = await STTRepo.instance.transcribe_from_sss_path(

@@ -274,7 +274,8 @@ async def download_project(
 
     if project.status != ProcessingStatus.completed:
         raise api.HTTPException(
-            api.status.HTTP_403_FORBIDDEN, "Cannot download unfinished projects"
+            api.status.HTTP_400_BAD_REQUEST,
+            "All files must be transcribed before exporting. Please complete processing first."
         )
 
     exporter = get_exporter(format, toolkit)

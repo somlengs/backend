@@ -40,7 +40,7 @@ class ProjectProcessor:
 
     @classmethod
     def on_task_complete(cls, project_id: UUID) -> None:
-        del cls.tasks[project_id]
+        cls.tasks.pop(project_id, None)  # Use pop to avoid KeyError if already removed
 
     @classmethod
     def get_stream(cls, project_id: UUID) -> Callable[[], AsyncGenerator[Any, str]]:

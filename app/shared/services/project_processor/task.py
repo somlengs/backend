@@ -107,6 +107,8 @@ class ProcessingTask:
         logger.debug(
             f"Transcription for file {task.id} finished (took {(time.perf_counter() - t0):.4f}s)"
         )
+        # Commit immediately to emit SSE event for real-time UI update
+        task.commit()
         return task
 
     async def start(self) -> None:
@@ -156,8 +158,7 @@ class ProcessingTask:
         results = await asyncio.gather(*tasks)
         self.project.status = ProcessingStatus.completed
 
-        for r in results:
-            r.commit()
+        # Files are already committed in _run_task, no need to commit again
 
         await ProjectRepo.instance.replace_project(
             db, self.project, self.project.created_by

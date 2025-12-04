@@ -102,3 +102,11 @@ class AudioFileRepo(ABC):
         user_id: UUID | str,
     ) -> bool:
         ...
+
+    @abstractmethod
+    async def get_completed_files(
+        self,
+        db: Session,
+        project_id: UUID | str,
+    ) -> list[AudioFileTable]:
+        ...
