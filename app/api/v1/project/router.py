@@ -5,7 +5,7 @@ from uuid import UUID
 import fastapi as api
 from sqlalchemy.orm import Session
 
-from app.core.deps.auth import auth_user
+from app.core.deps.auth import auth_user, auth_user_sse
 from app.core.deps.db import get_db
 from app.core.logger import get
 from app.entities.dto.responses.project import project_model_to_schema
@@ -32,7 +32,7 @@ logger = get()
 
 @router.get("/events")
 async def events(
-    user: AuthUser = api.Depends(auth_user),
+    user: AuthUser = api.Depends(auth_user_sse),
 ) -> api.responses.StreamingResponse:
     gen = EventManager.get_stream(
         ProjectEvent,
