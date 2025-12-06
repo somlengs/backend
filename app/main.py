@@ -16,6 +16,18 @@ from app.shared.services.metadata_exporter import CSVExporter, add_exporter
 
 app = FastAPI(lifespan=lifespan)
 
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=Config.CORS_ORIGINS,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Load API routers
+load_routers(app)
+
 
 @app.get('/')
 async def root():
@@ -23,14 +35,6 @@ async def root():
 
 
 def setup_server() -> uvicorn.Server:
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=Config.CORS_ORIGINS,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
     config = uvicorn.Config(
         app,
         port=Config.PORT,
@@ -43,7 +47,6 @@ def setup_server() -> uvicorn.Server:
     if loop_factory:
         asyncio.set_event_loop(loop_factory())
 
-    load_routers(app)
     return server
 
 
