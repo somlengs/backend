@@ -32,7 +32,7 @@ logger = get()
 
 @router.get("/events")
 async def events(
-    user: AuthUser = api.Depends(auth_user_sse),
+    user: AuthUser = api.Depends(auth_user),
 ) -> api.responses.StreamingResponse:
     gen = EventManager.get_stream(
         ProjectEvent,
