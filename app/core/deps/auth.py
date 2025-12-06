@@ -1,5 +1,5 @@
 from typing import Optional
-from fastapi import HTTPException, Request, status
+from fastapi import HTTPException, Request, status, Query
 import jwt
 
 from app.core.config import Config
@@ -45,7 +45,10 @@ def auth_user(request: Request) -> AuthUser:
     )
 
 
-def auth_user_sse(request: Request, token: Optional[str] = None) -> AuthUser:
+def auth_user_sse(
+    request: Request,
+    token: Optional[str] = Query(None, description="JWT token for SSE authentication")
+) -> AuthUser:
     """
     Auth dependency for SSE endpoints that accepts token from query params.
     EventSource doesn't support custom headers, so we need to pass token via URL.
