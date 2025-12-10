@@ -54,7 +54,7 @@ async def files_events(
 async def get_files(
     project_id: UUID,
     page: int = api.Query(1, ge=1),
-    limit: int = api.Query(20, ge=1),
+    limit: int = api.Query(20, ge=1, le=1000),
     name: str = api.Query(""),
     status: ProcessingStatus | None = api.Query(None),
     sort: AudioFileSorting = api.Query(AudioFileSorting.file_name),
