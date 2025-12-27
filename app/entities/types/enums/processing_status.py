@@ -6,6 +6,7 @@ from enum import StrEnum
 class ProcessingStatus(StrEnum):
     loading = "loading"
     pending = "pending"
+    queued = "queued"  # Waiting in processing queue
     processing = "processing"
     completed = "completed"
     error = "error"

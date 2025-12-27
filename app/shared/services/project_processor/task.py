@@ -103,13 +103,17 @@ class ProcessingTask:
 
     async def _run_task(self, task: SubTask) -> SubTask:
         t0 = time.perf_counter()
-        await task.start()
-        logger.debug(
-            f"Transcription for file {task.id} finished (took {(time.perf_counter() - t0):.4f}s)"
-        )
-        # Commit immediately to emit SSE event for real-time UI update
-        task.commit()
-        return task
+        try:
+            await task.start()
+            logger.debug(
+                f"Transcription for file {task.id} finished (took {(time.perf_counter() - t0):.4f}s)"
+            )
+            # Commit immediately to emit SSE event for real-time UI update
+            task.commit()
+            return task
+        finally:
+            # Close the session to prevent connection leaks
+            task.db.close()
 
     async def start(self) -> None:
         db = ProjectRepo.instance.get_session()()
@@ -127,6 +131,7 @@ class ProcessingTask:
         logger.info(f"Processing started for project {self.project.id}")
         await self._notify_listeners("Started")
 
+        # Process files in natural database order
         files = project.files
 
         self.project.status = ProcessingStatus.processing
@@ -139,8 +144,17 @@ class ProcessingTask:
             )
         )
 
+        # Mark all pending files as "queued" to show they're in the processing queue
         for file in files:
-            t = SubTask(db, file)
+            if file.transcription_status == ProcessingStatus.pending:
+                file.transcription_status = ProcessingStatus.queued
+                db.merge(file)
+        db.commit()  # Commit all queued status updates at once
+
+        for file in files:
+            # Create a new session for each SubTask to avoid transaction conflicts
+            file_db = ProjectRepo.instance.get_session()()
+            t = SubTask(file_db, file)
             t.listener = self._on_sub_task_update
             self.sub_tasks[t] = file.transcription_status
 
@@ -152,7 +166,7 @@ class ProcessingTask:
                 return await self._run_task(st)
 
         for st, status in self.sub_tasks.items():
-            if status == ProcessingStatus.pending:
+            if status in (ProcessingStatus.pending, ProcessingStatus.queued):
                 tasks.append(run_limited(st))
 
         results = await asyncio.gather(*tasks)

@@ -89,9 +89,11 @@ class SubTask:
         self.logger.info(f"Emitting file_updated event for file {self.file.id}, status={self._status}, eid={eid}")
         EventManager.notify(event)
         self.db.merge(self.file)
+        self.db.flush()  # Flush changes to database immediately
+        self.db.commit()  # CRITICAL: Actually save to database!
 
     async def start(self) -> None:
-        if self._status != ProcessingStatus.pending:
+        if self._status not in (ProcessingStatus.pending, ProcessingStatus.queued):
             raise RuntimeError(f"Cannot process already started file {self.id}")
 
         self._status = ProcessingStatus.processing
